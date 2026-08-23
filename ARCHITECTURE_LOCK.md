@@ -1,7 +1,7 @@
 # PrivacyVault Architecture & Design System Lock
 
-This document defines the **locked security, storage, and design architecture** for **PrivacyVault**.
-All core security foundation modules (Steps 1 through 4B) are officially frozen and locked. No future UI or feature additions may modify, bypass, or simplify these underlying security invariants.
+This document defines the **locked security, storage, technology stack, and design architecture** for **PrivacyVault**.
+All core security foundation modules (Steps 1 through 4B) are officially frozen and locked. No future UI or feature additions may modify, bypass, or simplify these underlying security invariants or replace the technology stack.
 
 ---
 
@@ -88,7 +88,44 @@ VMK_main                           VMK_decoy
 
 ---
 
-## 4. Known Future Platform Integration Work (iOS Target)
+## 4. Locked Technology Stack
+
+The technology stack for **PrivacyVault** is permanently locked across all development phases:
+
+- **Programming Language**: Swift
+- **UI Framework**: SwiftUI
+- **Application Platform**: Native iOS
+- **Project Structure**: Native Xcode Project (`PrivacyVault.xcodeproj`)
+- **Cryptography Framework**: Apple `CryptoKit`
+- **Keychain & Credential Storage**: Apple `Security` framework / Keychain
+- **Biometrics Framework**: Apple `LocalAuthentication`
+- **Media & Photos Integration**: Apple `Photos` / `PhotosUI`
+- **File System Storage**: iOS application sandbox, `FileManager`, `VaultStorage` & `FileStore` abstractions
+- **Database Subsystem**: Existing `Database` abstraction and JSON metadata persistence (do not replace without explicit approval)
+- **Application Architecture**: `Core` / `Services` / `Storage` / `Security` / `Platform` protocol-oriented architecture
+- **Networking / Backend / Cloud**: NONE (100% local-only)
+- **Analytics / Telemetry**: NONE
+
+### Explicitly Prohibited Stack Changes (Without Explicit User Approval)
+- React Native, Expo, Flutter, Kotlin, Android
+- Web technologies (HTML/JS/CSS web apps, Electron, Ionic)
+- Firebase, Supabase, Cloudflare, AWS, or any cloud database/server
+- Cloud media storage or remote backups
+- Third-party authentication or analytics SDKs
+- Replacing SwiftUI with UIKit or another UI framework
+- Replacing Apple `CryptoKit` with custom cryptography
+- Replacing the locked `VaultStorage`, `EncryptedMediaStorageEngine`, or `Database` architecture
+
+### Allowed Native Apple Framework Additions
+Native Apple iOS frameworks may be introduced when required for platform features without altering the stack:
+- `CryptoKit`, `Security`, `LocalAuthentication`, `Photos`, `PhotosUI`, `ImageIO`, `CoreGraphics`, `AVFoundation`, `UIKit` (where required for native iOS integration).
+
+### Development Environment Policy (Windows)
+Developing in a Windows environment must **NEVER** trigger a stack migration or framework replacement. Platform-specific iOS capabilities remain behind `Platform/` abstractions with safe fail-closed placeholders until macOS/Xcode testing.
+
+---
+
+## 5. Known Future Platform Integration Work (iOS Target)
 
 The core architecture abstracts iOS platform components using clean protocol boundaries. The following concrete iOS implementations will be completed when deploying to macOS/Xcode:
 
@@ -102,7 +139,7 @@ The core architecture abstracts iOS platform components using clean protocol bou
 
 ---
 
-## 5. Locked UI Design Language
+## 6. Locked UI Design Language
 
 All future application screens, components, and views MUST adhere strictly to this locked design system:
 
