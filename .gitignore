@@ -1,0 +1,34 @@
+# Xcode
+#
+# gitignore template for Xcode
+# website: https://atlassian.com/git/tutorials/saving-changes/gitignore
+
+# Build generated files
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Architecture header files
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# User data
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcuserstate
+
+# OS files
+.DS_Store
+Thumbs.db
