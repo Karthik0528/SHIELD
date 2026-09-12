@@ -164,6 +164,62 @@ public final class EncryptedMediaStorageEngine: Sendable {
         }
     }
     
+    // MARK: - Transactional Loading & Decryption
+    /// Loads and decrypts in memory the thumbnail binary container for a given media item.
+    public func loadThumbnail(
+        for item: MediaItem,
+        vault: VaultType,
+        masterKey: SymmetricKeyMaterial
+    ) throws -> Data {
+        guard item.vaultType == vault else {
+            throw StorageEngineError.unauthenticatedVault
+        }
+        guard let thumbID = item.thumbnailStorageIdentifier else {
+            throw StorageEngineError.itemNotFound
+        }
+        guard storage.thumbnailStore.thumbnailExists(identifier: thumbID, vault: vault) else {
+            throw StorageEngineError.itemNotFound
+        }
+        
+        let encContainerData = try storage.thumbnailStore.loadThumbnail(identifier: thumbID, vault: vault)
+        let container = try EncryptedObjectContainer.decode(from: encContainerData)
+        guard container.vaultType == vault else {
+            throw StorageEngineError.unauthenticatedVault
+        }
+        
+        let wrappedKeyPayload = try JSONDecoder().decode(WrappedKeyPayload.self, from: container.wrappedKeyData)
+        let perThumbKey = try encryptionEngine.unwrapKey(wrappedKey: wrappedKeyPayload, using: masterKey)
+        let cipherPayload = EncryptedPayload(nonce: container.nonce, tag: container.tag, ciphertext: container.ciphertext)
+        
+        return try encryptionEngine.decrypt(payload: cipherPayload, using: perThumbKey)
+    }
+    
+    /// Loads and decrypts in memory the full-resolution media binary container for a given media item.
+    public func loadMedia(
+        for item: MediaItem,
+        vault: VaultType,
+        masterKey: SymmetricKeyMaterial
+    ) throws -> Data {
+        guard item.vaultType == vault else {
+            throw StorageEngineError.unauthenticatedVault
+        }
+        guard storage.fileStore.exists(identifier: item.storageIdentifier, vault: vault) else {
+            throw StorageEngineError.itemNotFound
+        }
+        
+        let encContainerData = try storage.fileStore.load(identifier: item.storageIdentifier, vault: vault)
+        let container = try EncryptedObjectContainer.decode(from: encContainerData)
+        guard container.vaultType == vault else {
+            throw StorageEngineError.unauthenticatedVault
+        }
+        
+        let wrappedKeyPayload = try JSONDecoder().decode(WrappedKeyPayload.self, from: container.wrappedKeyData)
+        let perMediaKey = try encryptionEngine.unwrapKey(wrappedKey: wrappedKeyPayload, using: masterKey)
+        let cipherPayload = EncryptedPayload(nonce: container.nonce, tag: container.tag, ciphertext: container.ciphertext)
+        
+        return try encryptionEngine.decrypt(payload: cipherPayload, using: perMediaKey)
+    }
+    
     // MARK: - Transactional Delete
     /// Permanently deletes a media item, its binary object, thumbnail binary, and database record.
     public func deleteMedia(itemID: UUID, vault: VaultType) throws {

@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 public struct PinInputView: View {
@@ -23,83 +22,98 @@ public struct PinInputView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ZStack {
+            VaultBackground()
             
-            Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-            
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            // PIN Indicators
-            HStack(spacing: 16) {
-                ForEach(0..<targetLength, id: \.self) { index in
-                    Circle()
-                        .fill(index < pin.count ? Color.accentColor : Color.gray.opacity(0.3))
-                        .frame(width: 16, height: 16)
+            VStack(spacing: 32) {
+                Spacer()
+                
+                VStack(spacing: 12) {
+                    Text(title)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(VaultTheme.textPrimary)
+                    
+                    Text(subtitle)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(VaultTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
                 }
-            }
-            .padding(.vertical, 16)
-            
-            if let error = errorMessage {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundColor(.red)
-                    .transition(.opacity)
-            }
-            
-            Spacer()
-            
-            // Keypad
-            VStack(spacing: 16) {
-                ForEach(0..<3) { row in
-                    HStack(spacing: 24) {
-                        ForEach(1...3, id: \.self) { col in
-                            let number = row * 3 + col
-                            KeypadButton(text: "\(number)") {
-                                appendDigit("\(number)")
+                
+                SecurePinDots(count: pin.count, maxCount: targetLength)
+                    .padding(.vertical, 8)
+                
+                if let error = errorMessage {
+                    Text(error)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.red.opacity(0.85))
+                        .transition(.opacity)
+                } else {
+                    Spacer().frame(height: 20)
+                }
+                
+                GlassCard(cornerRadius: VaultTheme.cornerRadiusLarge) {
+                    VStack(spacing: 16) {
+                        ForEach(0..<3) { row in
+                            HStack(spacing: 24) {
+                                ForEach(1...3, id: \.self) { col in
+                                    let number = row * 3 + col
+                                    keypadButton(label: "\(number)") {
+                                        appendDigit("\(number)")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        HStack(spacing: 24) {
+                            Spacer().frame(width: 64, height: 64)
+                            
+                            keypadButton(label: "0") {
+                                appendDigit("0")
+                            }
+                            
+                            Button(action: deleteDigit) {
+                                Image(systemName: "delete.left.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(VaultTheme.textSecondary)
+                                    .frame(width: 64, height: 64)
+                                    .background(VaultTheme.glassSurface)
+                                    .clipShape(Circle())
                             }
                         }
                     }
+                    .padding(8)
                 }
+                .padding(.horizontal, 24)
                 
-                HStack(spacing: 24) {
-                    Spacer().frame(width: 72, height: 72)
-                    
-                    KeypadButton(text: "0") {
-                        appendDigit("0")
-                    }
-                    
-                    Button(action: deleteDigit) {
-                        Image(systemName: "delete.left")
-                            .font(.title2)
-                            .foregroundColor(.primary)
-                            .frame(width: 72, height: 72)
-                            .background(Color.gray.opacity(0.15))
-                            .clipShape(Circle())
-                    }
-                }
+                Spacer()
             }
-            .padding(.bottom, 32)
         }
-        .onChange(of: pin) { newValue in
-            if newValue.count == targetLength {
-                let submittedPin = pin
-                pin = ""
-                onComplete(submittedPin)
-            }
+    }
+    
+    private func keypadButton(label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(VaultTheme.textPrimary)
+                .frame(width: 64, height: 64)
+                .background(VaultTheme.glassSurface)
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(VaultTheme.subtleBorder, lineWidth: 1)
+                )
         }
     }
     
     private func appendDigit(_ digit: String) {
         if pin.count < targetLength {
             pin.append(digit)
+            if pin.count == targetLength {
+                let submittedPin = pin
+                pin = ""
+                onComplete(submittedPin)
+            }
         }
     }
     
@@ -108,29 +122,4 @@ public struct PinInputView: View {
             pin.removeLast()
         }
     }
-}
-
-private struct KeypadButton: View {
-    let text: String
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(text)
-                .font(.title)
-                .fontWeight(.medium)
-                .foregroundColor(.primary)
-                .frame(width: 72, height: 72)
-                .background(Color.gray.opacity(0.15))
-                .clipShape(Circle())
-        }
-    }
-}
-
-#Preview {
-    PinInputView(
-        title: "Create Main PIN",
-        subtitle: "Enter a 4-digit PIN for your primary vault.",
-        onComplete: { _ in }
-    )
 }

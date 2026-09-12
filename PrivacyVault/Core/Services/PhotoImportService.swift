@@ -37,8 +37,10 @@ public final class PhotoImportService: Sendable {
         into vault: VaultType,
         masterKey: SymmetricKeyMaterial
     ) throws -> MediaItem {
-        // Stage 1: Receive photo payload
-        guard !rawImageData.isEmpty else {
+        // Stage 1: Validate payload & 500 MB media size limit
+        do {
+            try MediaSizePolicy.validate(sizeInBytes: Int64(rawImageData.count), mediaType: .photo)
+        } catch {
             throw PhotoImportError.emptyPayload
         }
         

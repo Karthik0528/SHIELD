@@ -17,7 +17,9 @@ public struct SetupFlowView: View {
     }
     
     public var body: some View {
-        VStack {
+        ZStack {
+            VaultBackground()
+            
             switch viewModel.currentStep {
             case .welcome:
                 WelcomeSetupView {
@@ -26,7 +28,7 @@ public struct SetupFlowView: View {
                 
             case .createMainPin:
                 PinInputView(
-                    title: "Create Main PIN",
+                    title: "Create Primary PIN",
                     subtitle: "Choose a 4-digit PIN for your primary vault.",
                     errorMessage: viewModel.errorMessage
                 ) { pin in
@@ -35,8 +37,8 @@ public struct SetupFlowView: View {
                 
             case .confirmMainPin:
                 PinInputView(
-                    title: "Confirm Main PIN",
-                    subtitle: "Re-enter your 4-digit Main PIN.",
+                    title: "Confirm Primary PIN",
+                    subtitle: "Re-enter your 4-digit Primary PIN.",
                     errorMessage: viewModel.errorMessage
                 ) { pin in
                     viewModel.handleConfirmMainPin(pin)
@@ -44,8 +46,8 @@ public struct SetupFlowView: View {
                 
             case .createDecoyPin:
                 PinInputView(
-                    title: "Create Decoy PIN",
-                    subtitle: "Choose a different 4-digit PIN for your decoy vault.",
+                    title: "Create Secondary PIN",
+                    subtitle: "Choose a different 4-digit PIN for your secondary vault.",
                     errorMessage: viewModel.errorMessage
                 ) { pin in
                     viewModel.handleCreateDecoyPin(pin)
@@ -53,44 +55,41 @@ public struct SetupFlowView: View {
                 
             case .confirmDecoyPin:
                 PinInputView(
-                    title: "Confirm Decoy PIN",
-                    subtitle: "Re-enter your 4-digit Decoy PIN.",
+                    title: "Confirm Secondary PIN",
+                    subtitle: "Re-enter your 4-digit Secondary PIN.",
                     errorMessage: viewModel.errorMessage
                 ) { pin in
                     viewModel.handleConfirmDecoyPin(pin)
                 }
                 
             case .complete:
-                VStack(spacing: 24) {
+                VStack(spacing: 32) {
                     Spacer()
                     
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 72))
-                        .foregroundColor(.green)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(VaultTheme.primaryGradient)
+                        .shadow(color: VaultTheme.glowPurple, radius: 16)
                     
-                    Text("Setup Complete")
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text("Both Main and Decoy vaults have been initialized. You can now unlock either vault using its respective PIN.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    
-                    Spacer()
-                    
-                    Button(action: viewModel.finishSetup) {
-                        Text("Proceed to Vault")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.accentColor)
-                            .cornerRadius(12)
+                    VStack(spacing: 8) {
+                        Text("Setup Complete")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(VaultTheme.textPrimary)
+                        
+                        Text("Your vault environment is initialized. Enter either PIN at unlock to open its corresponding vault.")
+                            .font(.system(size: 15))
+                            .foregroundColor(VaultTheme.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 24)
+                    
+                    Spacer()
+                    
+                    PrimaryGradientButton(title: "Proceed to Vault", systemImage: "arrow.right") {
+                        viewModel.finishSetup()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
                 }
             }
         }
@@ -146,7 +145,7 @@ public final class SetupFlowViewModel: ObservableObject {
             return
         }
         guard pin != tempMainPinConfirmation else {
-            errorMessage = "Decoy PIN must be different from Main PIN."
+            errorMessage = "Secondary PIN must be different from Primary PIN."
             return
         }
         tempDecoyPin = pin
