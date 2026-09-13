@@ -1,6 +1,29 @@
 import SwiftUI
 #if canImport(PhotosUI)
 import PhotosUI
+import CoreTransferable
+import UniformTypeIdentifiers
+
+/// Custom Transferable representation for importing video files from PhotosUI picker without full memory materialization.
+public struct VideoFileTransferable: Transferable {
+    public let url: URL
+
+    public static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { video in
+            SentTransferredFile(video.url)
+        } importing: { received in
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(UUID().uuidString).mp4")
+
+            try FileManager.default.copyItem(
+                at: received.file,
+                to: tempURL
+            )
+
+            return Self(url: tempURL)
+        }
+    }
+}
 #endif
 
 /// Modal sheet UI for securely importing photos and videos into the active vault.
@@ -171,10 +194,13 @@ public struct PhotoImportSheet: View {
             do {
                 // Check if video vs photo
                 if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) || $0.conforms(to: .video) }) {
-                    // Video import via FileHandle streaming path
-                    if let movieURL = try await item.loadTransferable(type: URL.self) {
+                    // Video import via FileHandle streaming path using VideoFileTransferable
+                    if let videoFile = try await item.loadTransferable(type: VideoFileTransferable.self) {
+                        defer {
+                            try? FileManager.default.removeItem(at: videoFile.url)
+                        }
                         _ = try await service.importVideoFile(
-                            sourceURL: movieURL,
+                            sourceURL: videoFile.url,
                             originalFilename: "video_\(UUID().uuidString).mp4",
                             vaultManager: vaultManager
                         )

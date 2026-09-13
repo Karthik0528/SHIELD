@@ -270,7 +270,7 @@ public final class Step5GallerySecurityTests {
         assert(VaultSettings.standardPinLength == 4, "Authoritative PIN length must be 4.")
         
         let cryptoPlatform = DefaultPlatformCrypto()
-        let keychainPlatform = DefaultPlatformKeychain()
+        let keychainPlatform = MockKeychain()
         let keyManager = DefaultKeyManager(cryptoPlatform: cryptoPlatform, keychainPlatform: keychainPlatform)
         let authManager = DefaultAuthenticationManager(keyManager: keyManager, keychainPlatform: keychainPlatform)
         

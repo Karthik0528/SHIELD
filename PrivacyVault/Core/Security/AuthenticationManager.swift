@@ -38,6 +38,9 @@ public protocol AuthenticationManagerProtocol: Sendable {
     /// Re-wraps Primary Vault Master Key with a new recovery key from active session.
     func changeRecoveryKey(newRecoveryKey: String) throws
     
+    /// Re-wraps Primary or Secondary Vault Master Key with a new PIN using active key hierarchy.
+    func changePin(for vault: VaultType, oldPin: String, newPin: String) throws
+    
     /// Resets failed attempt counter manually when needed.
     func resetFailedAttempts()
 }
@@ -116,5 +119,17 @@ public final class DefaultAuthenticationManager: AuthenticationManagerProtocol, 
     
     public func changeRecoveryKey(newRecoveryKey: String) throws {
         try keyManager.changeRecoveryKey(newRecoveryKey: newRecoveryKey)
+    }
+    
+    public func changePin(for vault: VaultType, oldPin: String, newPin: String) throws {
+        guard oldPin.count == VaultSettings.standardPinLength,
+              newPin.count == VaultSettings.standardPinLength else {
+            throw AuthenticationError.invalidCredentials
+        }
+        do {
+            try keyManager.rewrapMasterKey(for: vault, oldPin: oldPin, newPin: newPin)
+        } catch {
+            throw AuthenticationError.invalidCredentials
+        }
     }
 }

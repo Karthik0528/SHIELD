@@ -100,7 +100,9 @@ public final class MediaImportExportService: ObservableObject, @unchecked Sendab
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.maximumSize = CGSize(width: 320, height: 320)
         
-        if let cgImage = try? imageGenerator.copyCGImage(at: .zero, actualTime: nil) {
+        let sampleTime = CMTime(seconds: 0.5, preferredTimescale: 600)
+        let cgImage = (try? imageGenerator.copyCGImage(at: sampleTime, actualTime: nil)) ?? (try? imageGenerator.copyCGImage(at: .zero, actualTime: nil))
+        if let cgImage = cgImage {
             #if canImport(UIKit)
             let uiImage = UIImage(cgImage: cgImage)
             thumbnailBytes = uiImage.jpegData(compressionQuality: 0.7)
@@ -130,6 +132,30 @@ public final class MediaImportExportService: ObservableObject, @unchecked Sendab
         return item
     }
     
+    // MARK: - Video Playback Decryption
+    /// Decrypts a PVV1 encrypted video container into a temporary sandbox playback URL in `tmp/` for video viewing.
+    /// Caller is strictly responsible for removing the temporary file upon playback completion or view dismissal.
+    public func prepareVideoForPlayback(
+        item: MediaItem,
+        vaultManager: VaultManager
+    ) throws -> URL {
+        guard let vault = vaultManager.session.activeVaultType,
+              let masterKey = vaultManager.session.activeMasterKey else {
+            throw MediaImportExportError.unauthenticatedVault
+        }
+        guard item.mediaType == .video else {
+            throw MediaImportExportError.invalidMediaFormat
+        }
+        
+        let videoStorageEngine = VideoStorageEngine(storage: vaultManager.storage)
+        let decryptedBytes = try videoStorageEngine.loadVideo(for: item, vault: vault, masterKey: masterKey)
+        
+        let tempPlaybackURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("playback_\(UUID().uuidString).mp4")
+        try decryptedBytes.write(to: tempPlaybackURL, options: .atomic)
+        return tempPlaybackURL
+    }
+    
     // MARK: - Import Photo from Raw Data
     /// Encrypts and imports raw photo bytes into the active vault via 17-stage PhotoImportService.
     public func importPhotoBytes(
@@ -149,9 +175,13 @@ public final class MediaImportExportService: ObservableObject, @unchecked Sendab
             throw MediaImportExportError.mediaSizeExceeded(mediaType: .photo)
         }
         
-        // 2. Execute photo import pipeline
+        // 2. Execute photo import pipeline using active vault storage
+        let activePhotoService = PhotoImportService(
+            storageEngine: EncryptedMediaStorageEngine(storage: vaultManager.storage),
+            database: vaultManager.storage.database
+        )
         do {
-            let item = try photoService.importPhoto(
+            let item = try activePhotoService.importPhoto(
                 rawImageData: rawImageData,
                 originalFilename: originalFilename,
                 into: vault,

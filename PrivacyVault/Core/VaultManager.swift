@@ -73,8 +73,8 @@ public final class VaultManager: ObservableObject, @unchecked Sendable {
         
         shieldLog("[SHIELD_STARTUP] Startup evaluation END: \(newState)")
         
+        self.startupState = newState
         DispatchQueue.main.async {
-            self.startupState = newState
             self.objectWillChange.send()
         }
     }
@@ -149,6 +149,11 @@ public final class VaultManager: ObservableObject, @unchecked Sendable {
     /// Re-wraps active Primary Vault Master Key with a new recovery key.
     public func changeRecoveryKey(newRecoveryKey: String) throws {
         try authenticationManager.changeRecoveryKey(newRecoveryKey: newRecoveryKey)
+    }
+    
+    /// Re-wraps specified vault master key with a new 4-digit PIN using active key hierarchy.
+    public func changePin(for vault: VaultType, oldPin: String, newPin: String) throws {
+        try authenticationManager.changePin(for: vault, oldPin: oldPin, newPin: newPin)
     }
     
     // MARK: - Emergency Switch

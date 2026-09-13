@@ -10,6 +10,7 @@ public struct PrimarySecuritySettingsView: View {
     @State private var confirmRecoveryKey: String = ""
     @State private var errorMessage: String? = nil
     @State private var successMessage: String? = nil
+    @State private var isChangePinPresented: Bool = false
     
     public init(vaultManager: VaultManager, onDismiss: @escaping () -> Void) {
         self.vaultManager = vaultManager
@@ -20,89 +21,125 @@ public struct PrimarySecuritySettingsView: View {
         ZStack {
             VaultBackground()
             
-            VStack(spacing: 24) {
-                // Top Bar
-                HStack {
-                    Text("Security Settings")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(VaultTheme.textPrimary)
-                    
-                    Spacer()
-                    
-                    Button(action: dismissAndClear) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(VaultTheme.textSecondary)
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                
-                GlassCard(cornerRadius: VaultTheme.cornerRadiusLarge) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "key.fill")
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Top Bar
+                    HStack {
+                        Text("Security Settings")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(VaultTheme.textPrimary)
+                        
+                        Spacer()
+                        
+                        Button(action: dismissAndClear) {
+                            Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 24))
-                                .foregroundColor(VaultTheme.secondaryViolet)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Change Recovery Key")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(VaultTheme.textPrimary)
+                                .foregroundColor(VaultTheme.textSecondary)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    
+                    // Change Vault PIN Section
+                    GlassCard(cornerRadius: VaultTheme.cornerRadiusLarge) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "lock.rotation")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(VaultTheme.secondaryViolet)
                                 
-                                Text("Update the recovery key used to restore your Primary Vault PIN.")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(VaultTheme.textSecondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Vault PIN Management")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(VaultTheme.textPrimary)
+                                    
+                                    Text("Change Primary or Secondary vault PIN without re-encrypting media.")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(VaultTheme.textSecondary)
+                                }
+                            }
+                            
+                            PrimaryGradientButton(title: "Change Vault PIN", systemImage: "lock.shield") {
+                                isChangePinPresented = true
                             }
                         }
-                        
-                        VStack(spacing: 12) {
-                            SecureField("New Recovery Key", text: $newRecoveryKey)
-                                .font(.system(size: 16))
-                                .foregroundColor(VaultTheme.textPrimary)
-                                .padding()
-                                .background(VaultTheme.glassSurface)
-                                .cornerRadius(VaultTheme.cornerRadiusMedium)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusMedium)
-                                        .stroke(VaultTheme.subtleBorder, lineWidth: 1)
-                                )
-                            
-                            SecureField("Confirm New Recovery Key", text: $confirmRecoveryKey)
-                                .font(.system(size: 16))
-                                .foregroundColor(VaultTheme.textPrimary)
-                                .padding()
-                                .background(VaultTheme.glassSurface)
-                                .cornerRadius(VaultTheme.cornerRadiusMedium)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusMedium)
-                                        .stroke(VaultTheme.subtleBorder, lineWidth: 1)
-                                )
-                        }
-                        
-                        if let error = errorMessage {
-                            Text(error)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color.red.opacity(0.85))
-                        }
-                        
-                        if let success = successMessage {
-                            Text(success)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color.green.opacity(0.9))
-                        }
-                        
-                        PrimaryGradientButton(title: "Save New Recovery Key", systemImage: "checkmark.shield") {
-                            saveRecoveryKey()
-                        }
-                        .disabled(newRecoveryKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .opacity(newRecoveryKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
+                        .padding(20)
                     }
-                    .padding(20)
+                    .padding(.horizontal, 24)
+                    
+                    // Change Recovery Key Section
+                    GlassCard(cornerRadius: VaultTheme.cornerRadiusLarge) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "key.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(VaultTheme.secondaryViolet)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Change Recovery Key")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(VaultTheme.textPrimary)
+                                    
+                                    Text("Update the recovery key used to restore your Primary Vault PIN.")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(VaultTheme.textSecondary)
+                                }
+                            }
+                            
+                            VStack(spacing: 12) {
+                                SecureField("New Recovery Key", text: $newRecoveryKey)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(VaultTheme.textPrimary)
+                                    .padding()
+                                    .background(VaultTheme.glassSurface)
+                                    .cornerRadius(VaultTheme.cornerRadiusMedium)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusMedium)
+                                            .stroke(VaultTheme.subtleBorder, lineWidth: 1)
+                                    )
+                                
+                                SecureField("Confirm New Recovery Key", text: $confirmRecoveryKey)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(VaultTheme.textPrimary)
+                                    .padding()
+                                    .background(VaultTheme.glassSurface)
+                                    .cornerRadius(VaultTheme.cornerRadiusMedium)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusMedium)
+                                            .stroke(VaultTheme.subtleBorder, lineWidth: 1)
+                                    )
+                            }
+                            
+                            if let error = errorMessage {
+                                Text(error)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(Color.red.opacity(0.85))
+                            }
+                            
+                            if let success = successMessage {
+                                Text(success)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(Color.green.opacity(0.9))
+                            }
+                            
+                            PrimaryGradientButton(title: "Save New Recovery Key", systemImage: "checkmark.shield") {
+                                saveRecoveryKey()
+                            }
+                            .disabled(newRecoveryKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .opacity(newRecoveryKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
+                        }
+                        .padding(20)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 24)
-                
-                Spacer()
+                .padding(.bottom, 24)
+            }
+        }
+        .sheet(isPresented: $isChangePinPresented) {
+            ChangePinView(vaultManager: vaultManager) {
+                isChangePinPresented = false
             }
         }
     }

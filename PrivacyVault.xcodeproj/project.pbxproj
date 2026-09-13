@@ -41,6 +41,16 @@
 		11000000000000000000021D /* ContentFingerprintDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000011D /* ContentFingerprintDetector.swift */; };
 		11000000000000000000021E /* PhotoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000011E /* PhotoImportService.swift */; };
 		11000000000000000000021F /* PhotoImportPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000011F /* PhotoImportPipelineTests.swift */; };
+		110000000000000000000220 /* EmptyVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000120 /* EmptyVaultView.swift */; };
+		110000000000000000000221 /* GalleryToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000121 /* GalleryToolbar.swift */; };
+		110000000000000000000222 /* PhotoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000122 /* PhotoDetailView.swift */; };
+		110000000000000000000223 /* PhotoImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000123 /* PhotoImportSheet.swift */; };
+		110000000000000000000224 /* PhotoSelectionMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000124 /* PhotoSelectionMode.swift */; };
+		110000000000000000000225 /* PhotoThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000125 /* PhotoThumbnailView.swift */; };
+		110000000000000000000226 /* VaultGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000126 /* VaultGalleryView.swift */; };
+		110000000000000000000227 /* Step5GallerySecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000127 /* Step5GallerySecurityTests.swift */; };
+		110000000000000000000228 /* Step6BMediaImportExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000128 /* Step6BMediaImportExportTests.swift */; };
+		110000000000000000000229 /* VideoStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000129 /* VideoStorageTests.swift */; };
 		110000000000000000000230 /* MediaSizePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000130 /* MediaSizePolicy.swift */; };
 		110000000000000000000231 /* MediaImportExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000131 /* MediaImportExportService.swift */; };
 		110000000000000000000232 /* StreamingVideoExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000132 /* StreamingVideoExportService.swift */; };
@@ -53,22 +63,14 @@
 		110000000000000000000239 /* SecurePinDots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000139 /* SecurePinDots.swift */; };
 		11000000000000000000023A /* VaultBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013A /* VaultBackground.swift */; };
 		11000000000000000000023B /* VaultTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013B /* VaultTheme.swift */; };
-		110000000000000000000220 /* EmptyVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000120 /* EmptyVaultView.swift */; };
-		110000000000000000000221 /* GalleryToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000121 /* GalleryToolbar.swift */; };
-		110000000000000000000222 /* PhotoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000122 /* PhotoDetailView.swift */; };
-		110000000000000000000223 /* PhotoImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000123 /* PhotoImportSheet.swift */; };
-		110000000000000000000224 /* PhotoSelectionMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000124 /* PhotoSelectionMode.swift */; };
-		110000000000000000000225 /* PhotoThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000125 /* PhotoThumbnailView.swift */; };
-		110000000000000000000226 /* VaultGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000126 /* VaultGalleryView.swift */; };
-		110000000000000000000227 /* Step5GallerySecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000127 /* Step5GallerySecurityTests.swift */; };
-		110000000000000000000228 /* Step6BMediaImportExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000128 /* Step6BMediaImportExportTests.swift */; };
-		110000000000000000000229 /* VideoStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000129 /* VideoStorageTests.swift */; };
-		11000000000000000000023F /* Step7RecoverySecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013F /* Step7RecoverySecurityTests.swift */; };
 		11000000000000000000023C /* RecoveryKeyInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013C /* RecoveryKeyInputView.swift */; };
 		11000000000000000000023D /* RecoveryKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013D /* RecoveryKeyView.swift */; };
 		11000000000000000000023E /* PrimarySecuritySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013E /* PrimarySecuritySettingsView.swift */; };
+		11000000000000000000023F /* Step7RecoverySecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11000000000000000000013F /* Step7RecoverySecurityTests.swift */; };
 		110000000000000000000240 /* VaultLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000140 /* VaultLoadingView.swift */; };
 		110000000000000000000241 /* VaultIntegrityErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110000000000000000000141 /* VaultIntegrityErrorView.swift */; };
+		990000000000000000000201 /* ChangePinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990000000000000000000101 /* ChangePinView.swift */; };
+		990000000000000000000202 /* Step8PinAndMediaViewerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990000000000000000000102 /* Step8PinAndMediaViewerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -109,6 +111,16 @@
 		11000000000000000000011D /* ContentFingerprintDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentFingerprintDetector.swift; sourceTree = "<group>"; };
 		11000000000000000000011E /* PhotoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportService.swift; sourceTree = "<group>"; };
 		11000000000000000000011F /* PhotoImportPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportPipelineTests.swift; sourceTree = "<group>"; };
+		110000000000000000000120 /* EmptyVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyVaultView.swift; sourceTree = "<group>"; };
+		110000000000000000000121 /* GalleryToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryToolbar.swift; sourceTree = "<group>"; };
+		110000000000000000000122 /* PhotoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailView.swift; sourceTree = "<group>"; };
+		110000000000000000000123 /* PhotoImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportSheet.swift; sourceTree = "<group>"; };
+		110000000000000000000124 /* PhotoSelectionMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSelectionMode.swift; sourceTree = "<group>"; };
+		110000000000000000000125 /* PhotoThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoThumbnailView.swift; sourceTree = "<group>"; };
+		110000000000000000000126 /* VaultGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultGalleryView.swift; sourceTree = "<group>"; };
+		110000000000000000000127 /* Step5GallerySecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step5GallerySecurityTests.swift; sourceTree = "<group>"; };
+		110000000000000000000128 /* Step6BMediaImportExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step6BMediaImportExportTests.swift; sourceTree = "<group>"; };
+		110000000000000000000129 /* VideoStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStorageTests.swift; sourceTree = "<group>"; };
 		110000000000000000000130 /* MediaSizePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSizePolicy.swift; sourceTree = "<group>"; };
 		110000000000000000000131 /* MediaImportExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaImportExportService.swift; sourceTree = "<group>"; };
 		110000000000000000000132 /* StreamingVideoExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingVideoExportService.swift; sourceTree = "<group>"; };
@@ -121,22 +133,14 @@
 		110000000000000000000139 /* SecurePinDots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurePinDots.swift; sourceTree = "<group>"; };
 		11000000000000000000013A /* VaultBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultBackground.swift; sourceTree = "<group>"; };
 		11000000000000000000013B /* VaultTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultTheme.swift; sourceTree = "<group>"; };
-		110000000000000000000120 /* EmptyVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyVaultView.swift; sourceTree = "<group>"; };
-		110000000000000000000121 /* GalleryToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryToolbar.swift; sourceTree = "<group>"; };
-		110000000000000000000122 /* PhotoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailView.swift; sourceTree = "<group>"; };
-		110000000000000000000123 /* PhotoImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportSheet.swift; sourceTree = "<group>"; };
-		110000000000000000000124 /* PhotoSelectionMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSelectionMode.swift; sourceTree = "<group>"; };
-		110000000000000000000125 /* PhotoThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoThumbnailView.swift; sourceTree = "<group>"; };
-		110000000000000000000126 /* VaultGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultGalleryView.swift; sourceTree = "<group>"; };
-		110000000000000000000127 /* Step5GallerySecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step5GallerySecurityTests.swift; sourceTree = "<group>"; };
-		110000000000000000000128 /* Step6BMediaImportExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step6BMediaImportExportTests.swift; sourceTree = "<group>"; };
-		110000000000000000000129 /* VideoStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStorageTests.swift; sourceTree = "<group>"; };
-		11000000000000000000013F /* Step7RecoverySecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step7RecoverySecurityTests.swift; sourceTree = "<group>"; };
 		11000000000000000000013C /* RecoveryKeyInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryKeyInputView.swift; sourceTree = "<group>"; };
 		11000000000000000000013D /* RecoveryKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryKeyView.swift; sourceTree = "<group>"; };
 		11000000000000000000013E /* PrimarySecuritySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimarySecuritySettingsView.swift; sourceTree = "<group>"; };
+		11000000000000000000013F /* Step7RecoverySecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step7RecoverySecurityTests.swift; sourceTree = "<group>"; };
 		110000000000000000000140 /* VaultLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultLoadingView.swift; sourceTree = "<group>"; };
 		110000000000000000000141 /* VaultIntegrityErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultIntegrityErrorView.swift; sourceTree = "<group>"; };
+		990000000000000000000101 /* ChangePinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePinView.swift; sourceTree = "<group>"; };
+		990000000000000000000102 /* Step8PinAndMediaViewerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Step8PinAndMediaViewerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +207,17 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
+		110000000000000000000013 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				11000000000000000000001B /* Setup */,
+				11000000000000000000001C /* Lock */,
+				11000000000000000000001F /* Gallery */,
+				110000000000000000000020 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
 		110000000000000000000014 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -212,6 +227,36 @@
 				110000000000000000000104 /* VaultSettings.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		110000000000000000000016 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				110000000000000000000022 /* ContentView.swift */,
+				110000000000000000000140 /* VaultLoadingView.swift */,
+				110000000000000000000141 /* VaultIntegrityErrorView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		110000000000000000000017 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				110000000000000000000025 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		110000000000000000000018 /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				11000000000000000000010E /* PlatformCryptoProtocol.swift */,
+				11000000000000000000010F /* PlatformKeychainProtocol.swift */,
+				110000000000000000000110 /* PlatformBiometricsProtocol.swift */,
+				110000000000000000000111 /* PlatformMediaProtocol.swift */,
+				11000000000000000000011B /* ThumbnailGeneratorProtocol.swift */,
+			);
+			path = Platform;
 			sourceTree = "<group>";
 		};
 		110000000000000000000019 /* Security */ = {
@@ -243,41 +288,6 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
-		11000000000000000000001E /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				11000000000000000000011C /* PhotoMetadataExtractor.swift */,
-				11000000000000000000011D /* ContentFingerprintDetector.swift */,
-				11000000000000000000011E /* PhotoImportService.swift */,
-				110000000000000000000131 /* MediaImportExportService.swift */,
-				110000000000000000000132 /* StreamingVideoExportService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		110000000000000000000018 /* Platform */ = {
-			isa = PBXGroup;
-			children = (
-				11000000000000000000010E /* PlatformCryptoProtocol.swift */,
-				11000000000000000000010F /* PlatformKeychainProtocol.swift */,
-				110000000000000000000110 /* PlatformBiometricsProtocol.swift */,
-				110000000000000000000111 /* PlatformMediaProtocol.swift */,
-				11000000000000000000011B /* ThumbnailGeneratorProtocol.swift */,
-			);
-			path = Platform;
-			sourceTree = "<group>";
-		};
-		110000000000000000000013 /* Features */ = {
-			isa = PBXGroup;
-			children = (
-				11000000000000000000001B /* Setup */,
-				11000000000000000000001C /* Lock */,
-				11000000000000000000001F /* Gallery */,
-				110000000000000000000020 /* Settings */,
-			);
-			path = Features;
-			sourceTree = "<group>";
-		};
 		11000000000000000000001B /* Setup */ = {
 			isa = PBXGroup;
 			children = (
@@ -306,31 +316,24 @@
 				110000000000000000000127 /* Step5GallerySecurityTests.swift */,
 				110000000000000000000128 /* Step6BMediaImportExportTests.swift */,
 				110000000000000000000129 /* VideoStorageTests.swift */,
+				990000000000000000000102 /* Step8PinAndMediaViewerTests.swift */,
 				11000000000000000000013F /* Step7RecoverySecurityTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		110000000000000000000016 /* Views */ = {
+		11000000000000000000001E /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				110000000000000000000022 /* ContentView.swift */,
-				110000000000000000000140 /* VaultLoadingView.swift */,
-				110000000000000000000141 /* VaultIntegrityErrorView.swift */,
+				11000000000000000000011C /* PhotoMetadataExtractor.swift */,
+				11000000000000000000011D /* ContentFingerprintDetector.swift */,
+				11000000000000000000011E /* PhotoImportService.swift */,
+				110000000000000000000131 /* MediaImportExportService.swift */,
+				110000000000000000000132 /* StreamingVideoExportService.swift */,
 			);
-			path = Views;
+			path = Services;
 			sourceTree = "<group>";
 		};
-		110000000000000000000017 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				110000000000000000000025 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-/* End PBXGroup section */
-
 		11000000000000000000001E_UI /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -363,10 +366,13 @@
 			isa = PBXGroup;
 			children = (
 				11000000000000000000013E /* PrimarySecuritySettingsView.swift */,
+				990000000000000000000101 /* ChangePinView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
 		};
+/* End PBXGroup section */
+
 /* Begin PBXNativeTarget section */
 		110000000000000000000004 /* PrivacyVault */ = {
 			isa = PBXNativeTarget;
@@ -377,6 +383,8 @@
 				11000000000000000000000D /* Resources */,
 			);
 			buildRules = (
+			);
+			dependencies = (
 			);
 			name = PrivacyVault;
 			productName = PrivacyVault;
@@ -480,6 +488,8 @@
 				110000000000000000000217 /* LockScreenView.swift in Sources */,
 				11000000000000000000023D /* RecoveryKeyView.swift in Sources */,
 				11000000000000000000023E /* PrimarySecuritySettingsView.swift in Sources */,
+				990000000000000000000201 /* ChangePinView.swift in Sources */,
+				990000000000000000000202 /* Step8PinAndMediaViewerTests.swift in Sources */,
 				110000000000000000000220 /* EmptyVaultView.swift in Sources */,
 				110000000000000000000221 /* GalleryToolbar.swift in Sources */,
 				110000000000000000000222 /* PhotoDetailView.swift in Sources */,
@@ -507,6 +517,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PrivacyVault/Preview Content\"";
+				DEVELOPMENT_TEAM = T5YTA6LYDT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrivacyVault/Info.plist;
@@ -535,6 +546,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PrivacyVault/Preview Content\"";
+				DEVELOPMENT_TEAM = T5YTA6LYDT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrivacyVault/Info.plist;
@@ -576,6 +588,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_MIN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
@@ -586,7 +599,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN_MIN_INT_CONVERSION = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -636,6 +648,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_MIN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
@@ -646,7 +659,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN_MIN_INT_CONVERSION = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;

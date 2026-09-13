@@ -41,7 +41,7 @@ public final class EncryptedMediaStorageEngine: Sendable {
         self.storage = storage
         self.encryptionEngine = encryptionEngine
         self.fileManager = fileManager
-        self.baseURL = baseURL ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        self.baseURL = baseURL ?? (storage as? VaultStorage)?.baseURL ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
     
     // MARK: - Transactional Import
@@ -122,10 +122,11 @@ public final class EncryptedMediaStorageEngine: Sendable {
         do {
             // Atomic write media object
             let objectsDir = baseURL.appendingPathComponent("\(vault.storageSubpath)/Objects", isDirectory: true)
+            try fileManager.createDirectory(at: objectsDir, withIntermediateDirectories: true)
             let tempMediaURL = objectsDir.appendingPathComponent("\(storageID).tmp")
             let finalMediaURL = objectsDir.appendingPathComponent("\(storageID).bin")
             
-            try mediaContainerData.write(to: tempMediaURL, options: .atomic)
+            try mediaContainerData.write(to: tempMediaURL)
             createdFiles.append(tempMediaURL)
             
             try fileManager.moveItem(at: tempMediaURL, to: finalMediaURL)
@@ -134,10 +135,11 @@ public final class EncryptedMediaStorageEngine: Sendable {
             // Atomic write thumbnail object
             if let thumbDataBlob = thumbnailContainerData, let thumbID = thumbnailStorageID {
                 let thumbsDir = baseURL.appendingPathComponent("\(vault.storageSubpath)/Thumbnails", isDirectory: true)
+                try fileManager.createDirectory(at: thumbsDir, withIntermediateDirectories: true)
                 let tempThumbURL = thumbsDir.appendingPathComponent("\(thumbID).tmp")
                 let finalThumbURL = thumbsDir.appendingPathComponent("\(thumbID).bin")
                 
-                try thumbDataBlob.write(to: tempThumbURL, options: .atomic)
+                try thumbDataBlob.write(to: tempThumbURL)
                 createdFiles.append(tempThumbURL)
                 
                 try fileManager.moveItem(at: tempThumbURL, to: finalThumbURL)
@@ -161,6 +163,7 @@ public final class EncryptedMediaStorageEngine: Sendable {
             try storage.database.saveMediaItem(mediaItem, for: vault)
             return mediaItem
         } catch {
+            print("[SHIELD_MEDIA] importMedia failed with error: \(error)"); fflush(stdout)
             rollback()
             throw StorageEngineError.atomicWriteFailed
         }

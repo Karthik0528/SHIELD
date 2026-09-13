@@ -7,6 +7,7 @@ public struct PhotoThumbnailView: View {
     public let item: MediaItem
     public let vault: VaultType
     public let masterKey: SymmetricKeyMaterial?
+    public let storage: VaultStorageProtocol
     public let isSelected: Bool
     public let isSelectionMode: Bool
     public let onTap: () -> Void
@@ -18,6 +19,7 @@ public struct PhotoThumbnailView: View {
         item: MediaItem,
         vault: VaultType,
         masterKey: SymmetricKeyMaterial?,
+        storage: VaultStorageProtocol = VaultStorage(),
         isSelected: Bool,
         isSelectionMode: Bool,
         onTap: @escaping () -> Void
@@ -25,6 +27,7 @@ public struct PhotoThumbnailView: View {
         self.item = item
         self.vault = vault
         self.masterKey = masterKey
+        self.storage = storage
         self.isSelected = isSelected
         self.isSelectionMode = isSelectionMode
         self.onTap = onTap
@@ -34,12 +37,19 @@ public struct PhotoThumbnailView: View {
         Button(action: onTap) {
             ZStack {
                 Rectangle()
-                    .fill(VaultTheme.cardBackground)
+                    .fill(isSelected ? VaultTheme.secondaryViolet.opacity(0.2) : VaultTheme.cardBackground)
                     .aspectRatio(1, contentMode: .fit)
-                    .cornerRadius(VaultTheme.cornerRadiusSmall)
+                    .cornerRadius(VaultTheme.cornerRadiusMedium)
                     .overlay(
-                        RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusSmall)
-                            .stroke(isSelected ? VaultTheme.secondaryViolet : VaultTheme.subtleBorder, lineWidth: isSelected ? 2 : 1)
+                        RoundedRectangle(cornerRadius: VaultTheme.cornerRadiusMedium)
+                            .stroke(
+                                isSelected ? VaultTheme.accentViolet : VaultTheme.subtleBorder,
+                                lineWidth: isSelected ? 2 : 1
+                            )
+                    )
+                    .shadow(
+                        color: isSelected ? VaultTheme.accentViolet.opacity(0.5) : Color.clear,
+                        radius: isSelected ? 6 : 0
                     )
                 
                 if let image = thumbnailImage {
@@ -48,14 +58,31 @@ public struct PhotoThumbnailView: View {
                         .scaledToFill()
                         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
                         .clipped()
-                        .cornerRadius(VaultTheme.cornerRadiusSmall)
+                        .cornerRadius(VaultTheme.cornerRadiusMedium)
                 } else if isLoading {
                     ProgressView()
                         .tint(VaultTheme.secondaryViolet)
                 } else {
-                    Image(systemName: "photo")
-                        .font(.system(size: 24))
+                    Image(systemName: item.mediaType == .video ? "video.fill" : "photo")
+                        .font(.system(size: 20))
                         .foregroundColor(VaultTheme.textMuted)
+                }
+                
+                // Video Play Badge Indicator
+                if item.mediaType == .video {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(4)
+                                .background(Color.black.opacity(0.7))
+                                .clipShape(Circle())
+                                .padding(4)
+                        }
+                    }
                 }
                 
                 if isSelectionMode {
@@ -72,6 +99,8 @@ public struct PhotoThumbnailView: View {
                 }
             }
         }
+        .scaleEffect(isSelected && !isSelectionMode ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         .task {
             await loadThumbnail()
         }
@@ -86,19 +115,20 @@ public struct PhotoThumbnailView: View {
             return
         }
         
-        let engine = EncryptedMediaStorageEngine()
+        let engine = EncryptedMediaStorageEngine(storage: storage)
+        var loadedSuccess = false
+        
         do {
             let decryptedBytes = try engine.loadThumbnail(for: item, vault: vault, masterKey: key)
             #if canImport(UIKit)
             if let uiImg = UIImage(data: decryptedBytes) {
                 thumbnailImage = Image(uiImage: uiImg)
-            } else {
-                thumbnailImage = Image(systemName: "photo.fill")
+                loadedSuccess = true
             }
-            #else
-            thumbnailImage = Image(systemName: "photo.fill")
             #endif
-        } catch {
+        } catch {}
+        
+        if !loadedSuccess {
             thumbnailImage = nil
         }
         isLoading = false

@@ -37,7 +37,7 @@ public final class VideoStorageEngine: Sendable {
         self.encryptionEngine = encryptionEngine
         self.cryptoPlatform = cryptoPlatform
         self.fileManager = fileManager
-        self.baseURL = baseURL ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        self.baseURL = baseURL ?? (storage as? VaultStorage)?.baseURL ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
     
     // MARK: - Transactional Streaming Video Import
@@ -128,6 +128,7 @@ public final class VideoStorageEngine: Sendable {
         
         do {
             let objectsDir = baseURL.appendingPathComponent("\(vault.storageSubpath)/Objects", isDirectory: true)
+            try fileManager.createDirectory(at: objectsDir, withIntermediateDirectories: true)
             let tempVideoURL = objectsDir.appendingPathComponent("\(storageID).tmp")
             let finalVideoURL = objectsDir.appendingPathComponent("\(storageID).bin")
             
@@ -183,10 +184,11 @@ public final class VideoStorageEngine: Sendable {
             // Atomic write thumbnail object (.tmp -> .bin)
             if let thumbDataBlob = thumbnailContainerData, let thumbID = thumbnailStorageID {
                 let thumbsDir = baseURL.appendingPathComponent("\(vault.storageSubpath)/Thumbnails", isDirectory: true)
+                try fileManager.createDirectory(at: thumbsDir, withIntermediateDirectories: true)
                 let tempThumbURL = thumbsDir.appendingPathComponent("\(thumbID).tmp")
                 let finalThumbURL = thumbsDir.appendingPathComponent("\(thumbID).bin")
                 
-                try thumbDataBlob.write(to: tempThumbURL, options: .atomic)
+                try thumbDataBlob.write(to: tempThumbURL)
                 createdFiles.append(tempThumbURL)
                 
                 try fileManager.moveItem(at: tempThumbURL, to: finalThumbURL)

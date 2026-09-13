@@ -23,7 +23,7 @@ public final class VaultStorage: VaultStorageProtocol {
     public let database: DatabaseProtocol
     
     private let fileManager: FileManager
-    private let baseURL: URL
+    public let baseURL: URL
     
     public init(
         fileStore: FileStoreProtocol? = nil,

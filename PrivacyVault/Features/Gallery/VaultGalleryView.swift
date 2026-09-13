@@ -65,7 +65,7 @@ public struct VaultGalleryView: View {
                     ProgressView()
                         .tint(VaultTheme.secondaryViolet)
                     Spacer()
-                } else if viewModel.mediaItems.isEmpty {
+                } else if viewModel.sortedMediaItems.isEmpty {
                     EmptyVaultView {
                         vaultManager.session.recordActivity()
                         viewModel.isImportSheetPresented = true
@@ -74,11 +74,12 @@ public struct VaultGalleryView: View {
                     // Encrypted Photo Grid
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 8) {
-                            ForEach(viewModel.mediaItems) { item in
+                            ForEach(viewModel.sortedMediaItems) { item in
                                 PhotoThumbnailView(
                                     item: item,
                                     vault: viewModel.activeVault,
                                     masterKey: viewModel.masterKey,
+                                    storage: vaultManager.storage,
                                     isSelected: selectionMode.selectedIDs.contains(item.id),
                                     isSelectionMode: selectionMode.isSelectionMode,
                                     onTap: {
@@ -117,10 +118,13 @@ public struct VaultGalleryView: View {
         .fullScreenCover(item: $viewModel.selectedDetailItem) { item in
             PhotoDetailView(
                 item: item,
+                mediaItems: viewModel.sortedMediaItems,
                 vaultManager: vaultManager,
-                onDelete: {
-                    viewModel.deleteItem(item)
-                    viewModel.selectedDetailItem = nil
+                onDelete: { deletedItem in
+                    viewModel.deleteItem(deletedItem)
+                    if viewModel.mediaItems.isEmpty {
+                        viewModel.selectedDetailItem = nil
+                    }
                 }
             )
         }
@@ -150,6 +154,24 @@ public final class VaultGalleryViewModel: ObservableObject, @unchecked Sendable 
     
     public var masterKey: SymmetricKeyMaterial? {
         return vaultManager.session.activeMasterKey
+    }
+    
+    /// Stable sorted collection of media items: ALL PHOTOS FIRST, ALL VIDEOS AFTER.
+    /// Preserves exact relative ordering among photos and among videos.
+    public var sortedMediaItems: [MediaItem] {
+        let enumerated = mediaItems.enumerated().map { ($0.offset, $0.element) }
+        let sorted = enumerated.sorted { first, second in
+            let (i1, item1) = first
+            let (i2, item2) = second
+            if item1.mediaType == .photo && item2.mediaType == .video {
+                return true
+            }
+            if item1.mediaType == .video && item2.mediaType == .photo {
+                return false
+            }
+            return i1 < i2
+        }
+        return sorted.map { $0.1 }
     }
     
     @MainActor
