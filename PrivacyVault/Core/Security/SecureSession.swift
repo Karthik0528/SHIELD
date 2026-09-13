@@ -27,6 +27,13 @@ public protocol SecureSessionProtocol: AnyObject, Sendable {
     func lock()
 }
 
+public extension SecureSessionProtocol {
+    func recordActivity() {
+        touchActivity()
+    }
+}
+
+
 /// Concrete session lifecycle manager.
 public final class SecureSession: SecureSessionProtocol, @unchecked Sendable {
     private let lockQueue = DispatchQueue(label: "com.privacyvault.securesession", attributes: .concurrent)

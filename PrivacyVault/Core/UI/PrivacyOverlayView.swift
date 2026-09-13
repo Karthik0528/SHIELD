@@ -16,7 +16,7 @@ public struct PrivacyOverlayView: View {
                         .foregroundStyle(VaultTheme.primaryGradient)
                         .shadow(color: VaultTheme.glowPurple, radius: 12)
                     
-                    Text("Privacy Vault Protected")
+                    Text("SHIELD Protected")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(VaultTheme.textPrimary)
                     

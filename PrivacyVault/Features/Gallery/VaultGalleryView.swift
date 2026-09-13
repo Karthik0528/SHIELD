@@ -7,6 +7,7 @@ public struct VaultGalleryView: View {
     @ObservedObject private var vaultManager: VaultManager
     @StateObject private var viewModel: VaultGalleryViewModel
     @StateObject private var selectionMode = PhotoSelectionMode()
+    @State private var isSecuritySettingsPresented: Bool = false
     
     public init(vaultManager: VaultManager) {
         self.vaultManager = vaultManager
@@ -26,6 +27,7 @@ public struct VaultGalleryView: View {
             VStack(spacing: 0) {
                 // Top Header Toolbar
                 GalleryToolbar(
+                    activeVault: viewModel.activeVault,
                     isSelectionMode: selectionMode.isSelectionMode,
                     selectedCount: selectionMode.selectedIDs.count,
                     onAddPhotos: {
@@ -45,6 +47,13 @@ public struct VaultGalleryView: View {
                         vaultManager.session.recordActivity()
                         viewModel.exportItems(ids: selectionMode.selectedIDs)
                         selectionMode.clearSelection()
+                    },
+                    onOpenSecuritySettings: {
+                        vaultManager.session.recordActivity()
+                        isSecuritySettingsPresented = true
+                    },
+                    onSwitchToSecondary: {
+                        vaultManager.switchToSecondaryVault()
                     },
                     onLock: {
                         vaultManager.lock()
@@ -92,9 +101,17 @@ public struct VaultGalleryView: View {
             vaultManager.session.recordActivity()
             viewModel.fetchMediaItems()
         }
+        .onChange(of: vaultManager.session.activeVaultType) { _ in
+            viewModel.fetchMediaItems()
+        }
         .sheet(isPresented: $viewModel.isImportSheetPresented) {
             PhotoImportSheet(vaultManager: vaultManager) {
                 viewModel.fetchMediaItems()
+            }
+        }
+        .sheet(isPresented: $isSecuritySettingsPresented) {
+            PrimarySecuritySettingsView(vaultManager: vaultManager) {
+                isSecuritySettingsPresented = false
             }
         }
         .fullScreenCover(item: $viewModel.selectedDetailItem) { item in

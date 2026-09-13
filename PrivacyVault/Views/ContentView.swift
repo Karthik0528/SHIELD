@@ -1,3 +1,5 @@
+
+
 import SwiftUI
 
 struct ContentView: View {
@@ -9,17 +11,33 @@ struct ContentView: View {
     // Auto-lock heartbeat timer when session is authenticated
     private let autoLockTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
     
+    init() {
+        shieldLog("[SHIELD_STARTUP] ContentView created")
+    }
+    
     var body: some View {
-        ZStack {
+        let _ = shieldLog("[SHIELD_STARTUP] Rendering state: \(vaultManager.startupState)")
+        return ZStack {
             Group {
-                if !vaultManager.authenticationManager.isSetupComplete {
+                switch vaultManager.startupState {
+                case .loading:
+                    VaultLoadingView()
+                case .uninitialized:
                     SetupFlowView(vaultManager: vaultManager) {
+                        vaultManager.evaluateStartupState()
                         refreshId = UUID()
                     }
-                } else if !vaultManager.session.isAuthenticated {
-                    LockScreenView(vaultManager: vaultManager)
-                } else {
-                    VaultGalleryView(vaultManager: vaultManager)
+                case .ready:
+                    if !vaultManager.session.isAuthenticated {
+                        LockScreenView(vaultManager: vaultManager)
+                    } else {
+                        VaultGalleryView(vaultManager: vaultManager)
+                    }
+                case .vaultIntegrityError(let reason):
+                    VaultIntegrityErrorView(reason: reason) {
+                        vaultManager.evaluateStartupState()
+                        refreshId = UUID()
+                    }
                 }
             }
             .id(refreshId)
@@ -29,6 +47,9 @@ struct ContentView: View {
                 PrivacyOverlayView()
                     .transition(.opacity)
             }
+        }
+        .onAppear {
+            vaultManager.evaluateStartupState()
         }
         .onChange(of: scenePhase) { phase in
             switch phase {

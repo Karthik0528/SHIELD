@@ -258,7 +258,7 @@ public final class VideoStorageEngine: Sendable {
             throw VideoStorageError.itemNotFound
         }
         
-        let encContainerData = try storage.fileStore.load(identifier: item.storageIdentifier, vault: vault)
+        let encContainerData = try storage.fileStore.read(identifier: item.storageIdentifier, vault: vault)
         let container = try EncryptedVideoContainer.decode(from: encContainerData)
         guard container.vaultType == vault else {
             throw VideoStorageError.unauthenticatedVault
@@ -300,7 +300,7 @@ public final class VideoStorageEngine: Sendable {
             throw VideoStorageError.itemNotFound
         }
         
-        let encContainerData = try storage.fileStore.load(identifier: item.storageIdentifier, vault: vault)
+        let encContainerData = try storage.fileStore.read(identifier: item.storageIdentifier, vault: vault)
         let container = try EncryptedVideoContainer.decode(from: encContainerData)
         guard container.vaultType == vault else {
             throw VideoStorageError.unauthenticatedVault

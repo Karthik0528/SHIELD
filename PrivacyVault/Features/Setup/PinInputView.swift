@@ -7,7 +7,7 @@ public struct PinInputView: View {
     public let onComplete: (String) -> Void
     
     @State private var pin: String = ""
-    private let targetLength: Int = 4
+    private let targetLength: Int = VaultSettings.standardPinLength
     
     public init(
         title: String,

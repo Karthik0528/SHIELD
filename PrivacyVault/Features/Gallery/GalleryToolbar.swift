@@ -3,29 +3,38 @@ import SwiftUI
 /// Glass header toolbar for the Gallery screen.
 /// Contains title, Add Photos, Select, Export, Delete, and Lock actions.
 public struct GalleryToolbar: View {
+    public let activeVault: VaultType
     public let isSelectionMode: Bool
     public let selectedCount: Int
     public let onAddPhotos: () -> Void
     public let onToggleSelection: () -> Void
     public let onDeleteSelected: () -> Void
     public let onExportSelected: () -> Void
+    public let onOpenSecuritySettings: (() -> Void)?
+    public let onSwitchToSecondary: (() -> Void)?
     public let onLock: () -> Void
     
     public init(
+        activeVault: VaultType = .main,
         isSelectionMode: Bool,
         selectedCount: Int,
         onAddPhotos: @escaping () -> Void,
         onToggleSelection: @escaping () -> Void,
         onDeleteSelected: @escaping () -> Void,
         onExportSelected: @escaping () -> Void,
+        onOpenSecuritySettings: (() -> Void)? = nil,
+        onSwitchToSecondary: (() -> Void)? = nil,
         onLock: @escaping () -> Void
     ) {
+        self.activeVault = activeVault
         self.isSelectionMode = isSelectionMode
         self.selectedCount = selectedCount
         self.onAddPhotos = onAddPhotos
         self.onToggleSelection = onToggleSelection
         self.onDeleteSelected = onDeleteSelected
         self.onExportSelected = onExportSelected
+        self.onOpenSecuritySettings = onOpenSecuritySettings
+        self.onSwitchToSecondary = onSwitchToSecondary
         self.onLock = onLock
     }
     
@@ -36,7 +45,7 @@ public struct GalleryToolbar: View {
                     .font(.system(size: 20))
                     .foregroundStyle(VaultTheme.primaryGradient)
                 
-                Text(isSelectionMode ? "\(selectedCount) Selected" : "Privacy Vault")
+                Text(isSelectionMode ? "\(selectedCount) Selected" : "SHIELD")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(VaultTheme.textPrimary)
             }
@@ -77,7 +86,33 @@ public struct GalleryToolbar: View {
                             .shadow(color: VaultTheme.glowPurple, radius: 8)
                     }
                     
-                    GlassButton(title: "Select", action: onToggleSelection)
+                    if activeVault == .main, let onSwitchToSecondary = onSwitchToSecondary {
+                        Button(action: onSwitchToSecondary) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(VaultTheme.secondaryViolet)
+                                .padding(10)
+                                .background(VaultTheme.glassSurface)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(VaultTheme.subtleBorder, lineWidth: 1)
+                                )
+                        }
+                    }
+                    
+                    if activeVault == .main, let onOpenSecuritySettings = onOpenSecuritySettings {
+                        Button(action: onOpenSecuritySettings) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(VaultTheme.textSecondary)
+                                .padding(10)
+                                .background(VaultTheme.glassSurface)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(VaultTheme.subtleBorder, lineWidth: 1)
+                                )
+                        }
+                    }
                     
                     Button(action: onLock) {
                         Image(systemName: "lock.fill")

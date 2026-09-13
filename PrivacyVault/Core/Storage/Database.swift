@@ -63,6 +63,7 @@ public final class EncryptedDatabase: DatabaseProtocol {
         var items = try fetchMediaItems(for: vault)
         items.removeAll(where: { $0.id == id })
         let dir = databaseURL(for: vault)
+        try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(items)
         try data.write(to: dir.appendingPathComponent("media_items.json"), options: .atomic)
     }
@@ -92,6 +93,7 @@ public final class EncryptedDatabase: DatabaseProtocol {
         var albums = try fetchAlbums(for: vault)
         albums.removeAll(where: { $0.id == id })
         let dir = databaseURL(for: vault)
+        try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(albums)
         try data.write(to: dir.appendingPathComponent("albums.json"), options: .atomic)
     }

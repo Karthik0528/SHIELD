@@ -12,6 +12,7 @@ public enum VaultTheme {
     // Accents & Gradients
     public static let primaryPurple = Color(hex: "7C3AED")
     public static let secondaryViolet = Color(hex: "8B5CF6")
+    public static let accentViolet = Color(hex: "8B5CF6")
     public static let glowPurple = Color(hex: "A855F7").opacity(0.35)
     public static let subtleBorder = Color.white.opacity(0.12)
     public static let activeBorder = Color(hex: "8B5CF6").opacity(0.6)

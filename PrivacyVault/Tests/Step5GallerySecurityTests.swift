@@ -34,15 +34,20 @@ public final class Step5GallerySecurityTests {
         try testGalleryNeverQueriesBothDatabases()
         try testNoSampleImagesGeneratedOrInserted()
         try testWindowsSecureOperationsFailClosed()
+        try testPinLengthConsistencyAndUnlock()
         try tearDown()
-        print("--- All 20 Step 5 Security & Storage Tests Completed Successfully ---")
+        print("--- All 21 Step 5 Security & Storage Tests Completed Successfully ---")
     }
     
+    private func uniqueURL() -> URL {
+        return testBaseURL.appendingPathComponent(UUID().uuidString)
+    }
+
     // MARK: - Test Cases
     
     /// Test 1: Verify gallery queries active vault only.
     public func testGalleryQueriesActiveVaultOnly() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let mainItem = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "main_001", thumbnailStorageIdentifier: "thumb_001", fileSize: 100)
         let decoyItem = MediaItem(vaultType: .decoy, mediaType: .photo, encryptedFilenameRef: Data([0x04]), encryptedMetadataRef: Data([0x05]), encryptedFileKeyRef: Data([0x06]), storageIdentifier: "decoy_001", thumbnailStorageIdentifier: "thumb_002", fileSize: 200)
         
@@ -57,7 +62,7 @@ public final class Step5GallerySecurityTests {
     
     /// Test 2: Verify Main vault cannot access Decoy media items.
     public func testMainCannotAccessDecoyMedia() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let mainItems = try database.fetchMediaItems(for: .main)
         assert(!mainItems.contains(where: { $0.vaultType == .decoy }), "Main vault query must never expose Decoy items.")
         print("[PASS] testMainCannotAccessDecoyMedia")
@@ -65,7 +70,7 @@ public final class Step5GallerySecurityTests {
     
     /// Test 3: Verify Decoy vault cannot access Main media items.
     public func testDecoyCannotAccessMainMedia() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let decoyItems = try database.fetchMediaItems(for: .decoy)
         assert(!decoyItems.contains(where: { $0.vaultType == .main }), "Decoy vault query must never expose Main items.")
         print("[PASS] testDecoyCannotAccessMainMedia")
@@ -95,8 +100,8 @@ public final class Step5GallerySecurityTests {
     
     /// Test 6: Verify EncryptedMediaStorageEngine loadThumbnail encapsulates container decoding.
     public func testStorageEngineLoadThumbnailEncapsulated() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         let item = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "nonexistent", thumbnailStorageIdentifier: "nonexistent_thumb", fileSize: 100)
         let key = SymmetricKeyMaterial(rawBytes: Data(repeating: 0x01, count: 32))
         
@@ -111,8 +116,8 @@ public final class Step5GallerySecurityTests {
     
     /// Test 7: Verify EncryptedMediaStorageEngine loadMedia encapsulates container decoding.
     public func testStorageEngineLoadMediaEncapsulated() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         let item = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "nonexistent", thumbnailStorageIdentifier: nil, fileSize: 100)
         let key = SymmetricKeyMaterial(rawBytes: Data(repeating: 0x01, count: 32))
         
@@ -127,8 +132,8 @@ public final class Step5GallerySecurityTests {
     
     /// Test 8: Verify loadMedia and loadThumbnail fail when requesting wrong vault.
     public func testStorageEngineWrongVaultFails() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         let mainItem = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "main_storage_id", thumbnailStorageIdentifier: "main_thumb_id", fileSize: 100)
         let key = SymmetricKeyMaterial(rawBytes: Data(repeating: 0x01, count: 32))
         
@@ -143,8 +148,8 @@ public final class Step5GallerySecurityTests {
     
     /// Test 9: Verify wrong VMK fails decryption safely.
     public func testStorageEngineWrongVMKFails() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = EncryptedMediaStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         let item = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "nonexistent", thumbnailStorageIdentifier: nil, fileSize: 100)
         let wrongKey = SymmetricKeyMaterial(rawBytes: Data(repeating: 0x99, count: 32))
         
@@ -185,7 +190,7 @@ public final class Step5GallerySecurityTests {
     
     /// Test 13: Verify deletion does not modify Photos library.
     public func testDeleteDoesNotTouchExternalLibrary() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let item = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "del_001", thumbnailStorageIdentifier: nil, fileSize: 100)
         try database.saveMediaItem(item, for: .main)
         try database.deleteMediaItem(id: item.id, for: .main)
@@ -204,7 +209,7 @@ public final class Step5GallerySecurityTests {
     
     /// Test 15: Verify empty vault state.
     public func testEmptyVaultState() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let items = try database.fetchMediaItems(for: .main)
         assert(items.isEmpty, "New vault must start completely empty.")
         print("[PASS] testEmptyVaultState")
@@ -212,7 +217,7 @@ public final class Step5GallerySecurityTests {
     
     /// Test 16: Verify missing thumbnail handling.
     public func testMissingThumbnailHandling() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
         let exists = storage.thumbnailStore.thumbnailExists(identifier: "nonexistent", vault: .main)
         assert(!exists, "Missing thumbnail must safely return false.")
         print("[PASS] testMissingThumbnailHandling")
@@ -258,6 +263,56 @@ public final class Step5GallerySecurityTests {
         }
         #endif
         print("[PASS] testWindowsSecureOperationsFailClosed")
+    }
+    
+    /// Test 21: Verify authoritative 4-digit PIN setup and unlock consistency.
+    public func testPinLengthConsistencyAndUnlock() throws {
+        assert(VaultSettings.standardPinLength == 4, "Authoritative PIN length must be 4.")
+        
+        let cryptoPlatform = DefaultPlatformCrypto()
+        let keychainPlatform = DefaultPlatformKeychain()
+        let keyManager = DefaultKeyManager(cryptoPlatform: cryptoPlatform, keychainPlatform: keychainPlatform)
+        let authManager = DefaultAuthenticationManager(keyManager: keyManager, keychainPlatform: keychainPlatform)
+        
+        // Setup 4-digit PINs
+        let mainPin = "1234"
+        let decoyPin = "5678"
+        try authManager.setupDualVaults(mainPin: mainPin, decoyPin: decoyPin)
+        
+        assert(authManager.isSetupComplete, "Dual vault setup must be complete.")
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        var mainResult: AuthenticationResult?
+        var decoyResult: AuthenticationResult?
+        var wrongResult: AuthenticationResult?
+        
+        Task {
+            mainResult = await authManager.authenticate(with: mainPin)
+            decoyResult = await authManager.authenticate(with: decoyPin)
+            wrongResult = await authManager.authenticate(with: "9999")
+            semaphore.signal()
+        }
+        semaphore.wait()
+        
+        if case .success(let vaultType, _) = mainResult {
+            assert(vaultType == .main, "Main PIN '1234' must unlock Main Vault.")
+        } else {
+            assert(false, "Main PIN '1234' must successfully authenticate.")
+        }
+        
+        if case .success(let vaultType, _) = decoyResult {
+            assert(vaultType == .decoy, "Decoy PIN '5678' must unlock Decoy Vault.")
+        } else {
+            assert(false, "Decoy PIN '5678' must successfully authenticate.")
+        }
+        
+        if case .failure(let err) = wrongResult {
+            assert(err == .invalidCredentials, "Incorrect 4-digit PIN '9999' must fail with invalidCredentials.")
+        } else {
+            assert(false, "Incorrect PIN must fail authentication.")
+        }
+        
+        print("[PASS] testPinLengthConsistencyAndUnlock")
     }
     
     private func tearDown() throws {

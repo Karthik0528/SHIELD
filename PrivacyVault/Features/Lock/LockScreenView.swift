@@ -3,10 +3,12 @@ import SwiftUI
 public struct LockScreenView: View {
     @ObservedObject private var viewModel: LockScreenViewModel
     @State private var pin: String = ""
-    private let maxPinLength = 6
+    @State private var isRecoverySheetPresented: Bool = false
+    @State private var isSignaling: Bool = false
+    private let maxPinLength = VaultSettings.standardPinLength
     
     public init(vaultManager: VaultManager) {
-        self._viewModel = ObservedObject(wrappedValue: LockScreenViewModel(vaultManager: vaultManager))
+        self.viewModel = LockScreenViewModel(vaultManager: vaultManager)
     }
     
     public var body: some View {
@@ -16,14 +18,22 @@ public struct LockScreenView: View {
             VStack(spacing: 32) {
                 Spacer()
                 
-                // Header & Icon
+                // Mid-Top Center Camouflaged Shield-Lock Emblem
                 VStack(spacing: 12) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 56))
                         .foregroundStyle(VaultTheme.primaryGradient)
-                        .shadow(color: VaultTheme.glowPurple, radius: 16)
+                        .shadow(color: viewModel.failedAttempts >= 5 ? VaultTheme.glowPurple : Color.black.opacity(0.2), radius: viewModel.failedAttempts >= 5 ? 16 : 6)
+                        .scaleEffect(isSignaling ? 1.08 : 1.0)
+                        .animation(.easeInOut(duration: 0.8).repeatCount(3, autoreverses: true), value: isSignaling)
+                        .allowsHitTesting(viewModel.failedAttempts >= 5)
+                        .onLongPressGesture(minimumDuration: 3.0) {
+                            if viewModel.failedAttempts >= 5 {
+                                isRecoverySheetPresented = true
+                            }
+                        }
                     
-                    Text("Privacy Vault")
+                    Text("SHIELD")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(VaultTheme.textPrimary)
                     
@@ -36,7 +46,7 @@ public struct LockScreenView: View {
                 SecurePinDots(count: pin.count, maxCount: maxPinLength)
                     .padding(.vertical, 8)
                 
-                // Error Message Display
+                // Error Message Display (Generic "Incorrect PIN", no attempt counts or recovery text)
                 if let errorMsg = viewModel.errorMessage {
                     Text(errorMsg)
                         .font(.system(size: 14, weight: .semibold))
@@ -84,6 +94,19 @@ public struct LockScreenView: View {
                 Spacer()
             }
         }
+        .sheet(isPresented: $isRecoverySheetPresented) {
+            RecoveryKeyView(vaultManager: viewModel.vaultManager) {
+                isRecoverySheetPresented = false
+            }
+        }
+        .onChange(of: viewModel.failedAttempts) { attempts in
+            if attempts == 5 {
+                isSignaling = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    isSignaling = false
+                }
+            }
+        }
     }
     
     private func keypadButton(label: String, action: @escaping () -> Void) -> some View {
@@ -106,6 +129,7 @@ public struct LockScreenView: View {
         pin.append(digit)
         if pin.count == maxPinLength {
             let attempt = pin
+            NSLog("[SHIELD_LOG] 4-digit input completed, unlock attempt started")
             Task {
                 await viewModel.unlock(with: attempt)
                 if viewModel.errorMessage != nil {
@@ -124,21 +148,24 @@ public struct LockScreenView: View {
 
 public final class LockScreenViewModel: ObservableObject {
     @Published public var errorMessage: String? = nil
-    private let vaultManager: VaultManager
+    @Published public var failedAttempts: Int = 0
+    public let vaultManager: VaultManager
     
     public init(vaultManager: VaultManager) {
         self.vaultManager = vaultManager
+        self.failedAttempts = vaultManager.authenticationManager.failedAttempts
     }
     
     @MainActor
     public func unlock(with pin: String) async {
         errorMessage = nil
         let result = await vaultManager.unlock(with: pin)
+        failedAttempts = vaultManager.authenticationManager.failedAttempts
         switch result {
         case .success:
             errorMessage = nil
         case .failure:
-            // Generic error message without revealing vault identity
+            // Generic error message without revealing vault identity or attempt counts
             errorMessage = "Incorrect PIN."
         }
     }

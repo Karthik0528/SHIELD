@@ -11,6 +11,9 @@ public protocol VaultStorageProtocol: Sendable {
     
     /// Purges all storage content for a vault instance.
     func wipeStorage(for vault: VaultType) throws
+    
+    /// Checks whether any encrypted media, thumbnail, or database files exist on disk for the vault.
+    func hasDiskVaultData(for vault: VaultType) -> Bool
 }
 
 /// Concrete implementation of vault storage coordinator.
@@ -53,5 +56,28 @@ public final class VaultStorage: VaultStorageProtocol {
         if fileManager.fileExists(atPath: vaultRoot.path) {
             try fileManager.removeItem(at: vaultRoot)
         }
+    }
+    
+    public func hasDiskVaultData(for vault: VaultType) -> Bool {
+        let vaultRoot = baseURL.appendingPathComponent(vault.storageSubpath, isDirectory: true)
+        guard fileManager.fileExists(atPath: vaultRoot.path) else {
+            return false
+        }
+        
+        let objectsDir = vaultRoot.appendingPathComponent("Objects", isDirectory: true)
+        let thumbsDir = vaultRoot.appendingPathComponent("Thumbnails", isDirectory: true)
+        let dbDir = vaultRoot.appendingPathComponent("Database", isDirectory: true)
+        
+        if let files = try? fileManager.contentsOfDirectory(atPath: objectsDir.path), !files.isEmpty {
+            return true
+        }
+        if let files = try? fileManager.contentsOfDirectory(atPath: thumbsDir.path), !files.isEmpty {
+            return true
+        }
+        if let files = try? fileManager.contentsOfDirectory(atPath: dbDir.path), !files.isEmpty {
+            return true
+        }
+        
+        return false
     }
 }

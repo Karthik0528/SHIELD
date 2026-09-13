@@ -12,6 +12,7 @@ import AVFoundation
 public enum MediaImportExportError: Error, Equatable, Sendable {
     case unauthenticatedVault
     case mediaSizeExceeded(mediaType: MediaType)
+    case duplicateDetected
     case invalidMediaFormat
     case importCancelled
     case importFailed
@@ -21,6 +22,8 @@ public enum MediaImportExportError: Error, Equatable, Sendable {
     
     public var userFacingMessage: String {
         switch self {
+        case .duplicateDetected:
+            return "Photo already exists in SHIELD."
         case .mediaSizeExceeded(let mediaType):
             return mediaType == .video
                 ? "Video size not supported. This video exceeds the 500 MB limit."
@@ -147,15 +150,21 @@ public final class MediaImportExportService: ObservableObject, @unchecked Sendab
         }
         
         // 2. Execute photo import pipeline
-        let item = try photoService.importPhoto(
-            rawImageData: rawImageData,
-            originalFilename: originalFilename,
-            into: vault,
-            masterKey: masterKey
-        )
-        
-        vaultManager.session.recordActivity()
-        return item
+        do {
+            let item = try photoService.importPhoto(
+                rawImageData: rawImageData,
+                originalFilename: originalFilename,
+                into: vault,
+                masterKey: masterKey
+            )
+            
+            vaultManager.session.recordActivity()
+            return item
+        } catch PhotoImportError.duplicateDetected {
+            throw MediaImportExportError.duplicateDetected
+        } catch {
+            throw MediaImportExportError.importFailed
+        }
     }
     
     // MARK: - Export Single Item to iOS Photos Library

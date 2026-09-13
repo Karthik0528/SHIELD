@@ -54,6 +54,10 @@ public final class VideoStorageTests {
         print("--- All Video Storage Tests Completed Successfully ---")
     }
     
+    private func uniqueURL() -> URL {
+        return testBaseURL.appendingPathComponent(UUID().uuidString)
+    }
+
     // MARK: - Test Cases
     
     /// Test 1: Verify video > 500 MB is rejected by MediaSizePolicy.
@@ -259,8 +263,8 @@ public final class VideoStorageTests {
     
     /// Test 21: Verify temporary encrypted file is atomically committed.
     public func testTemporaryEncryptedFileAtomicallyCommitted() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         let masterKey = SymmetricKeyMaterial(rawBytes: Data(repeating: 0x01, count: 32))
         
         #if !canImport(CryptoKit)
@@ -276,7 +280,7 @@ public final class VideoStorageTests {
     
     /// Test 22: Verify failed import rolls back all created temporary and target files.
     public func testFailedImportRollsBackAllFiles() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
         let objectsDir = testBaseURL.appendingPathComponent("Vaults/Main/Objects")
         let contentsBefore = (try? fileManager.contentsOfDirectory(atPath: objectsDir.path)) ?? []
         assert(contentsBefore.isEmpty, "Objects directory must remain clean after failed import.")
@@ -285,8 +289,8 @@ public final class VideoStorageTests {
     
     /// Test 23: Verify missing video is detected as orphan.
     public func testMissingVideoDetectedAsOrphan() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         
         let missingItem = MediaItem(vaultType: .main, mediaType: .video, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "missing_video_id", thumbnailStorageIdentifier: nil, fileSize: 100)
         try storage.database.saveMediaItem(missingItem, for: .main)
@@ -298,8 +302,8 @@ public final class VideoStorageTests {
     
     /// Test 24: Verify missing thumbnail is detected as orphan.
     public func testMissingThumbnailDetectedAsOrphan() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         
         let missingThumbItem = MediaItem(vaultType: .main, mediaType: .video, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "valid_id", thumbnailStorageIdentifier: "missing_thumb_id", fileSize: 100)
         try storage.database.saveMediaItem(missingThumbItem, for: .main)
@@ -311,11 +315,13 @@ public final class VideoStorageTests {
     
     /// Test 25: Verify orphaned video binary is detected.
     public func testOrphanVideoDetected() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
-        try storage.initializeDirectories(for: .main)
+        let url = uniqueURL()
+        let storage = VaultStorage(fileManager: fileManager, baseURL: url)
+        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: url)
+        let objectsDir = url.appendingPathComponent("Vaults/Main/Objects")
+        try fileManager.createDirectory(at: objectsDir, withIntermediateDirectories: true)
         
-        let orphanFile = testBaseURL.appendingPathComponent("Vaults/Main/Objects/orphan_video.bin")
+        let orphanFile = objectsDir.appendingPathComponent("orphan_video.bin")
         try Data([0x01, 0x02]).write(to: orphanFile)
         
         let report = try engine.detectVideoOrphans(for: .main)
@@ -325,10 +331,12 @@ public final class VideoStorageTests {
     
     /// Test 26: Verify orphaned video thumbnail is detected.
     public func testOrphanThumbnailDetected() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        try storage.initializeDirectories(for: .main)
+        let url = uniqueURL()
+        let storage = VaultStorage(fileManager: fileManager, baseURL: url)
+        let thumbsDir = url.appendingPathComponent("Vaults/Main/Thumbnails")
+        try fileManager.createDirectory(at: thumbsDir, withIntermediateDirectories: true)
         
-        let orphanThumb = testBaseURL.appendingPathComponent("Vaults/Main/Thumbnails/orphan_thumb.bin")
+        let orphanThumb = thumbsDir.appendingPathComponent("orphan_thumb.bin")
         try Data([0x01, 0x02]).write(to: orphanThumb)
         
         let exists = storage.thumbnailStore.thumbnailExists(identifier: "orphan_thumb", vault: .main)
@@ -386,7 +394,7 @@ public final class VideoStorageTests {
     
     /// Test 32: Verify Main and Decoy video databases remain isolated.
     public func testMainAndDecoyDatabasesRemainIsolated() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let mainVideo = MediaItem(vaultType: .main, mediaType: .video, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "main_vid_001", thumbnailStorageIdentifier: nil, fileSize: 500)
         let decoyVideo = MediaItem(vaultType: .decoy, mediaType: .video, encryptedFilenameRef: Data([0x04]), encryptedMetadataRef: Data([0x05]), encryptedFileKeyRef: Data([0x06]), storageIdentifier: "decoy_vid_001", thumbnailStorageIdentifier: nil, fileSize: 600)
         
@@ -412,8 +420,8 @@ public final class VideoStorageTests {
     
     /// Test 34: Verify video deletion removes binary container, thumbnail container, and database record.
     public func testDeletionRemovesVideoAndThumbnailAndRecord() throws {
-        let storage = VaultStorage(fileManager: fileManager, baseURL: testBaseURL)
-        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: testBaseURL)
+        let storage = VaultStorage(fileManager: fileManager, baseURL: uniqueURL())
+        let engine = VideoStorageEngine(storage: storage, fileManager: fileManager, baseURL: uniqueURL())
         
         let item = MediaItem(vaultType: .main, mediaType: .video, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "del_vid_001", thumbnailStorageIdentifier: nil, fileSize: 100)
         try storage.database.saveMediaItem(item, for: .main)

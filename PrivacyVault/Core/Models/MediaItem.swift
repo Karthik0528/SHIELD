@@ -52,6 +52,9 @@ public struct MediaItem: Identifiable, Codable, Sendable {
     /// Item last modification timestamp.
     public let modifiedDate: Date
     
+    /// Vault-scoped HMAC-SHA256 fingerprint for exact duplicate content checking.
+    public let contentFingerprint: String?
+    
     public init(
         id: UUID = UUID(),
         vaultType: VaultType,
@@ -64,7 +67,8 @@ public struct MediaItem: Identifiable, Codable, Sendable {
         fileSize: Int64,
         formatVersion: UInt8 = 1,
         createdDate: Date = Date(),
-        modifiedDate: Date = Date()
+        modifiedDate: Date = Date(),
+        contentFingerprint: String? = nil
     ) {
         self.id = id
         self.vaultType = vaultType
@@ -78,5 +82,6 @@ public struct MediaItem: Identifiable, Codable, Sendable {
         self.formatVersion = formatVersion
         self.createdDate = createdDate
         self.modifiedDate = modifiedDate
+        self.contentFingerprint = contentFingerprint
     }
 }

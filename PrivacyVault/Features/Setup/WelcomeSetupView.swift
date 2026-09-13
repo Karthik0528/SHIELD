@@ -20,7 +20,7 @@ public struct WelcomeSetupView: View {
                     .shadow(color: VaultTheme.glowPurple, radius: 16)
                 
                 VStack(spacing: 8) {
-                    Text("Privacy Vault")
+                    Text("SHIELD")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(VaultTheme.textPrimary)
                     

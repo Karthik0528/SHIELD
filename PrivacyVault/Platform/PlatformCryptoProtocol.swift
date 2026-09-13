@@ -5,6 +5,43 @@ import CryptoKit
 import Security
 #endif
 
+#if canImport(CommonCrypto)
+import CommonCrypto
+
+/// Native CommonCrypto implementation of PBKDF2 key derivation.
+public struct CommonCryptoPBKDF2: PasswordKeyDerivationProtocol {
+    public init() {}
+    
+    public func deriveKey(passcode: String, salt: Data, iterations: Int) throws -> SymmetricKeyMaterial {
+        guard let passcodeData = passcode.data(using: .utf8) else {
+            throw PlatformCryptoError.keyDerivationFailed
+        }
+        var derivedKeyData = Data(count: 32)
+        let result = derivedKeyData.withUnsafeMutableBytes { derivedKeyBytes in
+            salt.withUnsafeBytes { saltBytes in
+                passcodeData.withUnsafeBytes { passcodeBytes in
+                    CCKeyDerivationPBKDF(
+                        CCPBKDFAlgorithm(kCCPBKDF2),
+                        passcodeBytes.baseAddress?.assumingMemoryBound(to: Int8.self),
+                        passcodeData.count,
+                        saltBytes.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                        salt.count,
+                        CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
+                        UInt32(iterations),
+                        derivedKeyBytes.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                        32
+                    )
+                }
+            }
+        }
+        guard result == kCCSuccess else {
+            throw PlatformCryptoError.keyDerivationFailed
+        }
+        return SymmetricKeyMaterial(rawBytes: derivedKeyData)
+    }
+}
+#endif
+
 /// Abstract contract for Password-based Key Derivation Functions (e.g. PBKDF2, Argon2).
 public protocol PasswordKeyDerivationProtocol: Sendable {
     func deriveKey(passcode: String, salt: Data, iterations: Int) throws -> SymmetricKeyMaterial
@@ -18,6 +55,17 @@ public protocol PlatformCryptoProtocol: Sendable {
     func encrypt(data: Data, using key: SymmetricKeyMaterial, authenticData: Data) throws -> EncryptedPayload
     func decrypt(payload: EncryptedPayload, using key: SymmetricKeyMaterial, authenticData: Data) throws -> Data
 }
+
+public extension PlatformCryptoProtocol {
+    func encrypt(data: Data, using key: SymmetricKeyMaterial) throws -> EncryptedPayload {
+        try encrypt(data: data, using: key, authenticData: Data())
+    }
+    
+    func decrypt(payload: EncryptedPayload, using key: SymmetricKeyMaterial) throws -> Data {
+        try decrypt(payload: payload, using: key, authenticData: Data())
+    }
+}
+
 
 public enum PlatformCryptoError: Error, Equatable, Sendable {
     case unsupportedPlatform
@@ -66,7 +114,12 @@ public final class DefaultPlatformCrypto: PlatformCryptoProtocol {
         if let kdfEngine = kdfEngine {
             return try kdfEngine.deriveKey(passcode: passcode, salt: salt, iterations: iterations)
         }
+        #if canImport(CommonCrypto)
+        let defaultEngine = CommonCryptoPBKDF2()
+        return try defaultEngine.deriveKey(passcode: passcode, salt: salt, iterations: iterations)
+        #else
         throw PlatformCryptoError.unsupportedPlatform
+        #endif
     }
     
     public func encrypt(data: Data, using key: SymmetricKeyMaterial, authenticData: Data = Data()) throws -> EncryptedPayload {
@@ -109,3 +162,4 @@ public final class DefaultPlatformCrypto: PlatformCryptoProtocol {
         #endif
     }
 }
+

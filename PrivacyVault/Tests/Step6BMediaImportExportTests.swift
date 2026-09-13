@@ -68,6 +68,10 @@ public final class Step6BMediaImportExportTests {
         print("--- All Step 6B Import & Export Tests Completed Successfully ---")
     }
     
+    private func uniqueURL() -> URL {
+        return testBaseURL.appendingPathComponent(UUID().uuidString)
+    }
+
     // MARK: - Test Cases
     
     /// Test 1: Verify native media picker integration abstraction exists.
@@ -179,7 +183,7 @@ public final class Step6BMediaImportExportTests {
     public func testOversizedMediaNeverReachesEncryptionEngine() throws {
         let size501MB: Int64 = (500 * 1024 * 1024) + 1
         let isRejectedBeforeEncryption = (try? MediaSizePolicy.validate(sizeInBytes: size501MB, mediaType: .video)) == nil
-        assert(!isRejectedBeforeEncryption, "Oversized media must be blocked prior to encryption.")
+        assert(isRejectedBeforeEncryption, "Oversized media must be blocked prior to encryption.")
         print("[PASS] testOversizedMediaNeverReachesEncryptionEngine (STATIC VERIFICATION)")
     }
     
@@ -409,9 +413,9 @@ public final class Step6BMediaImportExportTests {
         print("[PASS] testDecoyMediaCannotBeExportedFromMainSession (STATIC VERIFICATION)")
     }
     
-    /// Test 38: Verify export does not delete or modify vault media.
+    /// Test 38: Verify export operation does not delete or modify original encrypted media payload in vault.
     public func testExportDoesNotDeleteOrModifyVaultMedia() throws {
-        let database = EncryptedDatabase(fileManager: fileManager, baseURL: testBaseURL)
+        let database = EncryptedDatabase(fileManager: fileManager, baseURL: uniqueURL())
         let item = MediaItem(vaultType: .main, mediaType: .photo, encryptedFilenameRef: Data([0x01]), encryptedMetadataRef: Data([0x02]), encryptedFileKeyRef: Data([0x03]), storageIdentifier: "exp_1", thumbnailStorageIdentifier: nil, fileSize: 100)
         try database.saveMediaItem(item, for: .main)
         

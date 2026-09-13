@@ -53,7 +53,8 @@ public final class EncryptedMediaStorageEngine: Sendable {
         rawMetadataJSON: Data,
         mediaType: MediaType,
         vault: VaultType,
-        masterKey: SymmetricKeyMaterial
+        masterKey: SymmetricKeyMaterial,
+        contentFingerprint: String? = nil
     ) throws -> MediaItem {
         try storage.initializeDirectories(for: vault)
         
@@ -153,7 +154,8 @@ public final class EncryptedMediaStorageEngine: Sendable {
                 encryptedFileKeyRef: serializedWrappedMediaKey,
                 storageIdentifier: storageID,
                 thumbnailStorageIdentifier: thumbnailStorageID,
-                fileSize: Int64(mediaContainerData.count)
+                fileSize: Int64(mediaContainerData.count),
+                contentFingerprint: contentFingerprint
             )
             
             try storage.database.saveMediaItem(mediaItem, for: vault)
@@ -181,15 +183,15 @@ public final class EncryptedMediaStorageEngine: Sendable {
             throw StorageEngineError.itemNotFound
         }
         
-        let encContainerData = try storage.thumbnailStore.loadThumbnail(identifier: thumbID, vault: vault)
+        let encContainerData = try storage.thumbnailStore.readThumbnail(identifier: thumbID, vault: vault)
         let container = try EncryptedObjectContainer.decode(from: encContainerData)
         guard container.vaultType == vault else {
             throw StorageEngineError.unauthenticatedVault
         }
         
         let wrappedKeyPayload = try JSONDecoder().decode(WrappedKeyPayload.self, from: container.wrappedKeyData)
-        let perThumbKey = try encryptionEngine.unwrapKey(wrappedKey: wrappedKeyPayload, using: masterKey)
-        let cipherPayload = EncryptedPayload(nonce: container.nonce, tag: container.tag, ciphertext: container.ciphertext)
+        let perThumbKey = try encryptionEngine.unwrapKey(wrappedPayload: wrappedKeyPayload, using: masterKey)
+        let cipherPayload = EncryptedPayload(ciphertext: container.ciphertext, nonce: container.nonce, tag: container.tag)
         
         return try encryptionEngine.decrypt(payload: cipherPayload, using: perThumbKey)
     }
@@ -200,24 +202,59 @@ public final class EncryptedMediaStorageEngine: Sendable {
         vault: VaultType,
         masterKey: SymmetricKeyMaterial
     ) throws -> Data {
+        shieldLog("[SHIELD_MEDIA] Open requested")
+        shieldLog("[SHIELD_MEDIA] Active vault = \(vault.rawValue)")
+        
         guard item.vaultType == vault else {
+            shieldLog("[SHIELD_MEDIA] Vault type mismatch: item=\(item.vaultType.rawValue), active=\(vault.rawValue)")
             throw StorageEngineError.unauthenticatedVault
         }
-        guard storage.fileStore.exists(identifier: item.storageIdentifier, vault: vault) else {
+        
+        let fileExists = storage.fileStore.exists(identifier: item.storageIdentifier, vault: vault)
+        shieldLog("[SHIELD_MEDIA] Object located = \(fileExists)")
+        guard fileExists else {
             throw StorageEngineError.itemNotFound
         }
         
-        let encContainerData = try storage.fileStore.load(identifier: item.storageIdentifier, vault: vault)
-        let container = try EncryptedObjectContainer.decode(from: encContainerData)
+        shieldLog("[SHIELD_MEDIA] VMK available = true")
+        
+        let encContainerData = try storage.fileStore.read(identifier: item.storageIdentifier, vault: vault)
+        let container: EncryptedObjectContainer
+        do {
+            container = try EncryptedObjectContainer.decode(from: encContainerData)
+            shieldLog("[SHIELD_MEDIA] Container parse = success")
+        } catch {
+            shieldLog("[SHIELD_MEDIA] Container parse = failure: \(error)")
+            throw error
+        }
+        
         guard container.vaultType == vault else {
+            shieldLog("[SHIELD_MEDIA] Container vaultType mismatch")
             throw StorageEngineError.unauthenticatedVault
         }
         
-        let wrappedKeyPayload = try JSONDecoder().decode(WrappedKeyPayload.self, from: container.wrappedKeyData)
-        let perMediaKey = try encryptionEngine.unwrapKey(wrappedKey: wrappedKeyPayload, using: masterKey)
-        let cipherPayload = EncryptedPayload(nonce: container.nonce, tag: container.tag, ciphertext: container.ciphertext)
+        let perMediaKey: SymmetricKeyMaterial
+        do {
+            let wrappedKeyPayload = try JSONDecoder().decode(WrappedKeyPayload.self, from: container.wrappedKeyData)
+            perMediaKey = try encryptionEngine.unwrapKey(wrappedPayload: wrappedKeyPayload, using: masterKey)
+            shieldLog("[SHIELD_MEDIA] Media key unwrap = success")
+        } catch {
+            shieldLog("[SHIELD_MEDIA] Media key unwrap = failure: \(error)")
+            throw error
+        }
         
-        return try encryptionEngine.decrypt(payload: cipherPayload, using: perMediaKey)
+        let cipherPayload = EncryptedPayload(ciphertext: container.ciphertext, nonce: container.nonce, tag: container.tag)
+        
+        do {
+            let decrypted = try encryptionEngine.decrypt(payload: cipherPayload, using: perMediaKey)
+            shieldLog("[SHIELD_MEDIA] Payload authentication = success")
+            shieldLog("[SHIELD_MEDIA] Decryption = success")
+            return decrypted
+        } catch {
+            shieldLog("[SHIELD_MEDIA] Payload authentication = failure: \(error)")
+            shieldLog("[SHIELD_MEDIA] Decryption = failure: \(error)")
+            throw error
+        }
     }
     
     // MARK: - Transactional Delete

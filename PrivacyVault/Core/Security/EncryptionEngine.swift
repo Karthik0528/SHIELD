@@ -24,6 +24,9 @@ public struct EncryptedPayload: Codable, Sendable {
     }
 }
 
+public typealias WrappedKeyPayload = EncryptedPayload
+
+
 /// Contract for the cryptographic engine responsible for encrypting/decrypting media & metadata payloads.
 /// Implementations must use standard, vetted symmetric encryption algorithms (AES-GCM 256 via CryptoKit).
 public protocol EncryptionEngineProtocol: Sendable {

@@ -5,7 +5,7 @@ public struct SecurePinDots: View {
     private let count: Int
     private let maxCount: Int
     
-    public init(count: Int, maxCount: Int = 6) {
+    public init(count: Int, maxCount: Int = VaultSettings.standardPinLength) {
         self.count = count
         self.maxCount = maxCount
     }

@@ -34,6 +34,24 @@ public protocol KeyManagerProtocol: Sendable {
     /// Enables PIN changes without decrypting or re-encrypting media payloads.
     func rewrapMasterKey(for vault: VaultType, oldPin: String, newPin: String) throws
     
+    /// Provisions recovery wrapping for the Primary Vault Master Key using a user recovery key.
+    func setupRecoveryKey(for vmk: SymmetricKeyMaterial, recoveryKey: String) throws
+    
+    /// Unwraps the Primary Vault Master Key using the user recovery key.
+    func unlockPrimaryMasterKeyWithRecoveryKey(recoveryKey: String) throws -> SymmetricKeyMaterial
+    
+    /// Re-wraps Primary Vault Master Key with a new 4-digit PIN authorized by a valid recovery key.
+    func replacePrimaryPinWithRecovery(recoveryKey: String, newPin: String) throws -> SymmetricKeyMaterial
+    
+    /// Re-wraps Primary Vault Master Key with a new recovery key.
+    func changeRecoveryKey(newRecoveryKey: String) throws
+    
+    /// Provisions emergency switch wrapping for Decoy Vault Master Key using Primary Vault Master Key as KEK.
+    func setupSwitchKey(primaryVMK: SymmetricKeyMaterial, decoyVMK: SymmetricKeyMaterial) throws
+    
+    /// Unwraps Decoy Vault Master Key using Primary Vault Master Key during emergency switch.
+    func unlockDecoyMasterKeyWithSwitch(primaryVMK: SymmetricKeyMaterial) throws -> SymmetricKeyMaterial
+    
     /// Clears any cached in-memory key material for a given vault domain when locked.
     /// Does NOT delete persistent wrapped keys from Keychain storage.
     func purgeKeyMaterial(for vault: VaultType)
@@ -59,6 +77,7 @@ public final class DefaultKeyManager: KeyManagerProtocol, @unchecked Sendable {
         cryptoPlatform: PlatformCryptoProtocol,
         keychainPlatform: PlatformKeychainProtocol
     ) {
+        NSLog("[SHIELD_STARTUP] DefaultKeyManager.init")
         self.cryptoPlatform = cryptoPlatform
         self.keychainPlatform = keychainPlatform
     }
@@ -88,7 +107,24 @@ public final class DefaultKeyManager: KeyManagerProtocol, @unchecked Sendable {
         try keychainPlatform.save(data: wrappedVMK.nonce, forKey: "WrappedVMKNonce_\(vault.rawValue)")
         try keychainPlatform.save(data: wrappedVMK.tag, forKey: "WrappedVMKTag_\(vault.rawValue)")
         
+        queue.async(flags: .barrier) {
+            self.cachedMasterKeys[vault] = vmk
+        }
+        
         return parameters
+    }
+    
+    public func setupRecoveryKey(for vmk: SymmetricKeyMaterial, recoveryKey: String) throws {
+        let salt = try cryptoPlatform.generateSalt()
+        let parameters = KDFParameters(salt: salt)
+        let recoveryKEK = try deriveKEK(from: recoveryKey, parameters: parameters)
+        
+        let wrappedVMK = try cryptoPlatform.encrypt(data: vmk.rawBytes, using: recoveryKEK)
+        
+        try keychainPlatform.save(data: parameters.salt, forKey: "Salt_recovery")
+        try keychainPlatform.save(data: wrappedVMK.ciphertext, forKey: "WrappedVMK_recovery")
+        try keychainPlatform.save(data: wrappedVMK.nonce, forKey: "WrappedVMKNonce_recovery")
+        try keychainPlatform.save(data: wrappedVMK.tag, forKey: "WrappedVMKTag_recovery")
     }
     
     public func unlockVaultMasterKey(for vault: VaultType, pin: String) throws -> SymmetricKeyMaterial {
@@ -111,6 +147,82 @@ public final class DefaultKeyManager: KeyManagerProtocol, @unchecked Sendable {
         }
         
         return masterKey
+    }
+    
+    public func unlockPrimaryMasterKeyWithRecoveryKey(recoveryKey: String) throws -> SymmetricKeyMaterial {
+        guard let salt = try keychainPlatform.load(forKey: "Salt_recovery"),
+              let ciphertext = try keychainPlatform.load(forKey: "WrappedVMK_recovery"),
+              let nonce = try keychainPlatform.load(forKey: "WrappedVMKNonce_recovery"),
+              let tag = try keychainPlatform.load(forKey: "WrappedVMKTag_recovery") else {
+            throw KeyManagerError.vaultNotConfigured
+        }
+        
+        let parameters = KDFParameters(salt: salt)
+        let recoveryKEK = try deriveKEK(from: recoveryKey, parameters: parameters)
+        let wrappedPayload = EncryptedPayload(ciphertext: ciphertext, nonce: nonce, tag: tag)
+        
+        do {
+            let vmkData = try cryptoPlatform.decrypt(payload: wrappedPayload, using: recoveryKEK)
+            let masterKey = SymmetricKeyMaterial(rawBytes: vmkData)
+            return masterKey
+        } catch {
+            throw KeyManagerError.invalidPIN
+        }
+    }
+    
+    public func replacePrimaryPinWithRecovery(recoveryKey: String, newPin: String) throws -> SymmetricKeyMaterial {
+        let vmk = try unlockPrimaryMasterKeyWithRecoveryKey(recoveryKey: recoveryKey)
+        
+        let newSalt = try cryptoPlatform.generateSalt()
+        let newParams = KDFParameters(salt: newSalt)
+        let newKEK = try deriveKEK(from: newPin, parameters: newParams)
+        let newWrappedVMK = try cryptoPlatform.encrypt(data: vmk.rawBytes, using: newKEK)
+        
+        try keychainPlatform.save(data: newParams.salt, forKey: "Salt_main")
+        try keychainPlatform.save(data: newWrappedVMK.ciphertext, forKey: "WrappedVMK_main")
+        try keychainPlatform.save(data: newWrappedVMK.nonce, forKey: "WrappedVMKNonce_main")
+        try keychainPlatform.save(data: newWrappedVMK.tag, forKey: "WrappedVMKTag_main")
+        
+        queue.async(flags: .barrier) {
+            self.cachedMasterKeys[.main] = vmk
+        }
+        
+        return vmk
+    }
+    
+    public func changeRecoveryKey(newRecoveryKey: String) throws {
+        guard let activeVMK = getActiveMasterKey(for: .main) else {
+            throw KeyManagerError.vaultNotConfigured
+        }
+        try setupRecoveryKey(for: activeVMK, recoveryKey: newRecoveryKey)
+    }
+    
+    public static let switchAAD = Data("SHIELD.v1|VMK_SWITCH|main|decoy".utf8)
+    
+    public func setupSwitchKey(primaryVMK: SymmetricKeyMaterial, decoyVMK: SymmetricKeyMaterial) throws {
+        let wrappedDecoyVMK = try cryptoPlatform.encrypt(data: decoyVMK.rawBytes, using: primaryVMK, authenticData: DefaultKeyManager.switchAAD)
+        
+        try keychainPlatform.save(data: wrappedDecoyVMK.ciphertext, forKey: "WrappedVMK_switch")
+        try keychainPlatform.save(data: wrappedDecoyVMK.nonce, forKey: "WrappedVMKNonce_switch")
+        try keychainPlatform.save(data: wrappedDecoyVMK.tag, forKey: "WrappedVMKTag_switch")
+    }
+    
+    public func unlockDecoyMasterKeyWithSwitch(primaryVMK: SymmetricKeyMaterial) throws -> SymmetricKeyMaterial {
+        guard let ciphertext = try keychainPlatform.load(forKey: "WrappedVMK_switch"),
+              let nonce = try keychainPlatform.load(forKey: "WrappedVMKNonce_switch"),
+              let tag = try keychainPlatform.load(forKey: "WrappedVMKTag_switch") else {
+            throw KeyManagerError.vaultNotConfigured
+        }
+        
+        let wrappedPayload = EncryptedPayload(ciphertext: ciphertext, nonce: nonce, tag: tag)
+        let decoyVMKData = try cryptoPlatform.decrypt(payload: wrappedPayload, using: primaryVMK, authenticData: DefaultKeyManager.switchAAD)
+        let decoyVMK = SymmetricKeyMaterial(rawBytes: decoyVMKData)
+        
+        queue.async(flags: .barrier) {
+            self.cachedMasterKeys[.decoy] = decoyVMK
+        }
+        
+        return decoyVMK
     }
     
     public func getActiveMasterKey(for vault: VaultType) -> SymmetricKeyMaterial? {

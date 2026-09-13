@@ -15,17 +15,20 @@ public final class PhotoImportService: Sendable {
     private let metadataExtractor: PhotoMetadataExtractor
     private let thumbnailGenerator: ThumbnailGeneratorProtocol
     private let fingerprintDetector: ContentFingerprintDetector
+    private let database: DatabaseProtocol
     
     public init(
         storageEngine: EncryptedMediaStorageEngine = EncryptedMediaStorageEngine(),
         metadataExtractor: PhotoMetadataExtractor = PhotoMetadataExtractor(),
         thumbnailGenerator: ThumbnailGeneratorProtocol = DefaultThumbnailGenerator(),
-        fingerprintDetector: ContentFingerprintDetector = ContentFingerprintDetector()
+        fingerprintDetector: ContentFingerprintDetector = ContentFingerprintDetector(),
+        database: DatabaseProtocol = EncryptedDatabase()
     ) {
         self.storageEngine = storageEngine
         self.metadataExtractor = metadataExtractor
         self.thumbnailGenerator = thumbnailGenerator
         self.fingerprintDetector = fingerprintDetector
+        self.database = database
     }
     
     /// Executes the 17-stage secure photo import pipeline.
@@ -42,6 +45,13 @@ public final class PhotoImportService: Sendable {
             try MediaSizePolicy.validate(sizeInBytes: Int64(rawImageData.count), mediaType: .photo)
         } catch {
             throw PhotoImportError.emptyPayload
+        }
+        
+        // Stage 1b: Duplicate Detection check BEFORE any file persistence or encryption
+        let fingerprint = fingerprintDetector.computeFingerprint(for: rawImageData, masterKey: masterKey)
+        let existingItems = (try? database.fetchMediaItems(for: vault)) ?? []
+        if existingItems.contains(where: { $0.contentFingerprint == fingerprint }) {
+            throw PhotoImportError.duplicateDetected
         }
         
         // Stage 2 & 3: Validate supported format & image data
@@ -70,11 +80,14 @@ public final class PhotoImportService: Sendable {
                 rawMetadataJSON: metadataJSON,
                 mediaType: .photo,
                 vault: vault,
-                masterKey: masterKey
+                masterKey: masterKey,
+                contentFingerprint: fingerprint
             )
             
             // Stage 17: Post-import verification
             return item
+        } catch let err as PhotoImportError {
+            throw err
         } catch let err as StorageEngineError {
             if err == .atomicWriteFailed {
                 throw PhotoImportError.atomicWriteFailed

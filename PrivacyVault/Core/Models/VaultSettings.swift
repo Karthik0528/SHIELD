@@ -11,6 +11,9 @@ public enum AutoLockTimeout: Int, Codable, Sendable {
 
 /// Settings configuration bound to a specific vault domain instance.
 public struct VaultSettings: Codable, Sendable {
+    /// Authoritative PIN length required for setup, confirmation, and unlock UI.
+    public static let standardPinLength: Int = 4
+    
     public let vaultType: VaultType
     public var autoLockTimeout: AutoLockTimeout
     public var isBiometricEnabled: Bool
@@ -28,3 +31,4 @@ public struct VaultSettings: Codable, Sendable {
         self.isConfigured = isConfigured
     }
 }
+

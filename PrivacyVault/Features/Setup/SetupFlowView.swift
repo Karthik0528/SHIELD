@@ -6,6 +6,8 @@ public enum SetupStep {
     case confirmMainPin
     case createDecoyPin
     case confirmDecoyPin
+    case createRecoveryKey
+    case confirmRecoveryKey
     case complete
 }
 
@@ -13,7 +15,7 @@ public struct SetupFlowView: View {
     @ObservedObject private var viewModel: SetupFlowViewModel
     
     public init(vaultManager: VaultManager, onSetupComplete: @escaping () -> Void) {
-        self._viewModel = ObservedObject(wrappedValue: SetupFlowViewModel(vaultManager: vaultManager, onSetupComplete: onSetupComplete))
+        self.viewModel = SetupFlowViewModel(vaultManager: vaultManager, onSetupComplete: onSetupComplete)
     }
     
     public var body: some View {
@@ -62,6 +64,26 @@ public struct SetupFlowView: View {
                     viewModel.handleConfirmDecoyPin(pin)
                 }
                 
+            case .createRecoveryKey:
+                RecoveryKeyInputView(
+                    title: "Create Recovery Key",
+                    subtitle: "Choose a secure phrase, password, or key to recover your Primary Vault.",
+                    errorMessage: viewModel.errorMessage,
+                    buttonTitle: "Continue"
+                ) { key in
+                    viewModel.handleCreateRecoveryKey(key)
+                }
+                
+            case .confirmRecoveryKey:
+                RecoveryKeyInputView(
+                    title: "Confirm Recovery Key",
+                    subtitle: "Re-enter your Recovery Key.",
+                    errorMessage: viewModel.errorMessage,
+                    buttonTitle: "Complete Setup"
+                ) { key in
+                    viewModel.handleConfirmRecoveryKey(key)
+                }
+                
             case .complete:
                 VStack(spacing: 32) {
                     Spacer()
@@ -103,6 +125,7 @@ public final class SetupFlowViewModel: ObservableObject {
     private var tempMainPin: String = ""
     private var tempMainPinConfirmation: String = ""
     private var tempDecoyPin: String = ""
+    private var tempRecoveryKey: String = ""
     
     private let vaultManager: VaultManager
     private let onSetupComplete: () -> Void
@@ -118,8 +141,8 @@ public final class SetupFlowViewModel: ObservableObject {
     }
     
     public func handleCreateMainPin(_ pin: String) {
-        guard pin.count >= 4 else {
-            errorMessage = "PIN must be at least 4 digits."
+        guard pin.count == VaultSettings.standardPinLength else {
+            errorMessage = "PIN must be \(VaultSettings.standardPinLength) digits."
             return
         }
         tempMainPin = pin
@@ -140,8 +163,8 @@ public final class SetupFlowViewModel: ObservableObject {
     }
     
     public func handleCreateDecoyPin(_ pin: String) {
-        guard pin.count >= 4 else {
-            errorMessage = "PIN must be at least 4 digits."
+        guard pin.count == VaultSettings.standardPinLength else {
+            errorMessage = "PIN must be \(VaultSettings.standardPinLength) digits."
             return
         }
         guard pin != tempMainPinConfirmation else {
@@ -160,17 +183,41 @@ public final class SetupFlowViewModel: ObservableObject {
             currentStep = .createDecoyPin
             return
         }
+        errorMessage = nil
+        currentStep = .createRecoveryKey
+    }
+    
+    public func handleCreateRecoveryKey(_ key: String) {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 4 else {
+            errorMessage = "Recovery Key must be at least 4 characters."
+            return
+        }
+        tempRecoveryKey = key
+        errorMessage = nil
+        currentStep = .confirmRecoveryKey
+    }
+    
+    public func handleConfirmRecoveryKey(_ key: String) {
+        guard key == tempRecoveryKey else {
+            errorMessage = "Recovery Keys do not match. Try again."
+            tempRecoveryKey = ""
+            currentStep = .createRecoveryKey
+            return
+        }
         
         do {
             try vaultManager.authenticationManager.setupDualVaults(
                 mainPin: tempMainPinConfirmation,
-                decoyPin: pin
+                decoyPin: tempDecoyPin,
+                recoveryKey: key
             )
             
-            // Clear temporary PIN strings from memory
+            // Clear temporary secrets from memory
             tempMainPin = ""
             tempMainPinConfirmation = ""
             tempDecoyPin = ""
+            tempRecoveryKey = ""
             
             errorMessage = nil
             currentStep = .complete
@@ -179,6 +226,7 @@ public final class SetupFlowViewModel: ObservableObject {
             tempMainPin = ""
             tempMainPinConfirmation = ""
             tempDecoyPin = ""
+            tempRecoveryKey = ""
             currentStep = .createMainPin
         }
     }
